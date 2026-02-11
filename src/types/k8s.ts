@@ -23,8 +23,16 @@ export interface GeneratedManifest {
   description: string;
 }
 
+export interface MigrationScriptOutput {
+  filename: string;
+  content: string;
+  serviceName: string;
+  description: string;
+}
+
 export interface GeneratorOutput {
   manifests: GeneratedManifest[];
+  migrationScripts: MigrationScriptOutput[];
   readme: string;
   warnings: string[];
 }

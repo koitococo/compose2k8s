@@ -20,6 +20,17 @@ export async function writePlainOutput(
     writtenFiles.push(filePath);
   }
 
+  // Write migration scripts
+  if (output.migrationScripts.length > 0) {
+    const scriptsDir = join(outputDir, 'scripts');
+    await mkdir(scriptsDir, { recursive: true });
+    for (const script of output.migrationScripts) {
+      const scriptPath = join(scriptsDir, script.filename);
+      await writeFile(scriptPath, script.content, { mode: 0o755 });
+      writtenFiles.push(scriptPath);
+    }
+  }
+
   // Write README
   const readmePath = join(outputDir, 'README.md');
   await writeFile(readmePath, output.readme, 'utf-8');

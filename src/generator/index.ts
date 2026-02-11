@@ -10,6 +10,7 @@ import { generateConfigMapsForService } from './configmap.js';
 import { generateSecretsForService } from './secret.js';
 import { generatePVC } from './pvc.js';
 import { generateReadme } from './readme.js';
+import { generateMigrationScripts, type MigrationScript } from './migration-script.js';
 
 export interface GenerateInput {
   analysis: AnalysisResult;
@@ -70,8 +71,15 @@ export function generateManifests(input: GenerateInput): GeneratorOutput {
     manifests.push(ingressManifest);
   }
 
+  // Migration scripts
+  const migrationScripts = generateMigrationScripts(
+    analysis,
+    config.selectedServices,
+    config.deploy.namespace,
+  );
+
   // README
   const readme = generateReadme(manifests, config);
 
-  return { manifests, readme, warnings };
+  return { manifests, migrationScripts, readme, warnings };
 }
