@@ -7,10 +7,12 @@ const ingressRouteSchema = z.object({
 });
 
 const ingressSchema = z.object({
+  mode: z.enum(['ingress', 'gateway-api']).default('ingress'),
   domain: z.string().optional(),
   tls: z.boolean().default(false),
   certManager: z.boolean().default(false),
   controller: z.enum(['nginx', 'traefik', 'higress', 'none']).default('nginx'),
+  gatewayClass: z.string().optional(),
   routes: z.array(ingressRouteSchema).default([]),
 });
 

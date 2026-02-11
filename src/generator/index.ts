@@ -6,6 +6,7 @@ import { generateDeployment } from './deployment.js';
 import { generateStatefulSet } from './statefulset.js';
 import { generateService } from './service.js';
 import { generateIngress } from './ingress.js';
+import { generateGatewayAPI } from './gateway.js';
 import { generateConfigMapsForService } from './configmap.js';
 import { generateSecretsForService } from './secret.js';
 import { generatePVC } from './pvc.js';
@@ -65,10 +66,14 @@ export function generateManifests(input: GenerateInput): GeneratorOutput {
     manifests.push(...generateSecretsForService(serviceName, analyzed, config));
   }
 
-  // Ingress
-  const ingressManifest = generateIngress(config, analysis);
-  if (ingressManifest) {
-    manifests.push(ingressManifest);
+  // External traffic routing (Ingress or Gateway API)
+  if (config.ingress.mode === 'gateway-api') {
+    manifests.push(...generateGatewayAPI(config, analysis));
+  } else {
+    const ingressManifest = generateIngress(config, analysis);
+    if (ingressManifest) {
+      manifests.push(ingressManifest);
+    }
   }
 
   // Migration scripts

@@ -6,10 +6,12 @@ export interface IngressRoute {
 
 export interface IngressConfig {
   enabled: boolean;
+  mode: 'ingress' | 'gateway-api';
   domain?: string;
   tls: boolean;
   certManager: boolean;
   controller: 'nginx' | 'traefik' | 'higress' | 'none';
+  gatewayClass?: string;
   routes: IngressRoute[];
 }
 

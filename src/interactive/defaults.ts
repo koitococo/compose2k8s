@@ -46,6 +46,7 @@ export function generateDefaults(
     selectedServices,
     ingress: {
       enabled: false,
+      mode: 'ingress',
       tls: false,
       certManager: false,
       controller: 'none',

@@ -62,10 +62,12 @@ function resolveIngress(
   const ing = userConfig.ingress;
   return {
     enabled: true,
+    mode: ing.mode,
     domain: ing.domain,
     tls: ing.tls,
     certManager: ing.certManager,
     controller: ing.controller,
+    gatewayClass: ing.gatewayClass,
     routes: ing.routes.map((r) => ({
       serviceName: r.service,
       path: r.path,

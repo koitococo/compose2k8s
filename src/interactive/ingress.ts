@@ -3,14 +3,14 @@ import type { AnalysisResult } from '../types/analysis.js';
 import type { IngressConfig, IngressRoute } from '../types/config.js';
 
 /**
- * Step 2: Configure Ingress.
+ * Step 2: Configure external traffic routing (Ingress or Gateway API).
  */
 export async function configureIngress(
   analysis: AnalysisResult,
   selectedServices: string[],
 ): Promise<IngressConfig | symbol> {
   const enabled = await p.confirm({
-    message: 'Do you want to generate an Ingress resource?',
+    message: 'Do you want to configure external traffic routing?',
     initialValue: false,
   });
   if (p.isCancel(enabled)) return enabled;
@@ -18,12 +18,22 @@ export async function configureIngress(
   if (!enabled) {
     return {
       enabled: false,
+      mode: 'ingress',
       tls: false,
       certManager: false,
       controller: 'none',
       routes: [],
     };
   }
+
+  const mode = await p.select({
+    message: 'Routing API:',
+    options: [
+      { value: 'ingress' as const, label: 'Ingress', hint: 'Traditional Ingress resource (networking.k8s.io/v1)' },
+      { value: 'gateway-api' as const, label: 'Gateway API', hint: 'Modern Gateway API (gateway.networking.k8s.io/v1)' },
+    ],
+  });
+  if (p.isCancel(mode)) return mode;
 
   const domain = await p.text({
     message: 'What is the domain name?',
@@ -48,16 +58,30 @@ export async function configureIngress(
     certManager = cm;
   }
 
-  const controller = await p.select({
-    message: 'Ingress controller type:',
-    options: [
-      { value: 'nginx' as const, label: 'NGINX Ingress Controller' },
-      { value: 'traefik' as const, label: 'Traefik' },
-      { value: 'higress' as const, label: 'Higress' },
-      { value: 'none' as const, label: 'None (generic)' },
-    ],
-  });
-  if (p.isCancel(controller)) return controller;
+  let controller: IngressConfig['controller'] = 'none';
+  let gatewayClass: string | undefined;
+
+  if (mode === 'ingress') {
+    const ctrl = await p.select({
+      message: 'Ingress controller type:',
+      options: [
+        { value: 'nginx' as const, label: 'NGINX Ingress Controller' },
+        { value: 'traefik' as const, label: 'Traefik' },
+        { value: 'higress' as const, label: 'Higress' },
+        { value: 'none' as const, label: 'None (generic)' },
+      ],
+    });
+    if (p.isCancel(ctrl)) return ctrl;
+    controller = ctrl;
+  } else {
+    const gc = await p.text({
+      message: 'GatewayClass name:',
+      initialValue: 'istio',
+      placeholder: 'e.g. istio, cilium, nginx, higress',
+    });
+    if (p.isCancel(gc)) return gc;
+    gatewayClass = gc as string;
+  }
 
   // Build routes from web/api services with ports
   const routeServices = selectedServices.filter((name) => {
@@ -86,10 +110,12 @@ export async function configureIngress(
 
   return {
     enabled: true,
+    mode,
     domain: domain as string,
     tls,
     certManager,
     controller,
+    gatewayClass,
     routes,
   };
 }
