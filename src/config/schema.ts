@@ -10,7 +10,7 @@ const ingressSchema = z.object({
   domain: z.string().optional(),
   tls: z.boolean().default(false),
   certManager: z.boolean().default(false),
-  controller: z.enum(['nginx', 'traefik', 'none']).default('nginx'),
+  controller: z.enum(['nginx', 'traefik', 'higress', 'none']).default('nginx'),
   routes: z.array(ingressRouteSchema).default([]),
 });
 

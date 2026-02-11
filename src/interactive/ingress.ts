@@ -53,6 +53,7 @@ export async function configureIngress(
     options: [
       { value: 'nginx' as const, label: 'NGINX Ingress Controller' },
       { value: 'traefik' as const, label: 'Traefik' },
+      { value: 'higress' as const, label: 'Higress' },
       { value: 'none' as const, label: 'None (generic)' },
     ],
   });

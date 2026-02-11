@@ -13,7 +13,8 @@ export function generateIngress(
   if (!config.ingress.enabled || config.ingress.routes.length === 0) return null;
 
   const annotations: Record<string, string> = {};
-  const ingressClassName = config.ingress.controller ?? undefined;
+  const controller = config.ingress.controller;
+  const ingressClassName = controller !== 'none' ? controller : undefined;
 
   if (config.ingress.tls && config.ingress.certManager) {
     annotations['cert-manager.io/cluster-issuer'] = 'letsencrypt-prod';

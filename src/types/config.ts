@@ -9,7 +9,7 @@ export interface IngressConfig {
   domain?: string;
   tls: boolean;
   certManager: boolean;
-  controller: 'nginx' | 'traefik' | 'none';
+  controller: 'nginx' | 'traefik' | 'higress' | 'none';
   routes: IngressRoute[];
 }
 
