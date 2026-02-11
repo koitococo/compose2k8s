@@ -8,11 +8,13 @@ import { writeOutput } from '../output/index.js';
 import { runWizard } from '../interactive/wizard.js';
 import { generateDefaults } from '../interactive/defaults.js';
 import { findComposeFile } from '../utils/detect.js';
+import { loadConfigFile } from '../config/loader.js';
 
 export interface ConvertOptions {
   file?: string;
   envFile?: string;
   output?: string;
+  config?: string;
   nonInteractive?: boolean;
   format?: 'plain' | 'single-file';
   namespace?: string;
@@ -63,9 +65,18 @@ export async function convert(options: ConvertOptions): Promise<void> {
     }
   }
 
-  // Phase 3: Interactive or defaults
+  // Phase 3: Config file, defaults, or interactive
   let config;
-  if (options.nonInteractive) {
+  if (options.config) {
+    const { config: loaded, warnings: configWarnings } = await loadConfigFile(
+      resolve(options.config),
+      analysis,
+    );
+    config = loaded;
+    for (const w of configWarnings) {
+      p.log.warn(w);
+    }
+  } else if (options.nonInteractive) {
     config = generateDefaults(analysis, {
       outputDir: options.output,
       namespace: options.namespace,

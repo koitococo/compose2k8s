@@ -17,6 +17,7 @@ program
   .option('-f, --file <path>', 'Path to compose file')
   .option('-e, --env-file <path>', 'Path to .env file')
   .option('-o, --output <dir>', 'Output directory', './k8s')
+  .option('-c, --config <path>', 'Path to pre-answer config file')
   .option('--non-interactive', 'Use defaults without prompting')
   .option('--format <type>', 'Output format: plain or single-file', 'plain')
   .option('--namespace <ns>', 'Kubernetes namespace')
