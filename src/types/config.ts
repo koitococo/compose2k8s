@@ -25,6 +25,7 @@ export interface DeployOptions {
   imagePullPolicy: 'Always' | 'IfNotPresent' | 'Never';
   outputFormat: 'plain' | 'single-file';
   outputDir: string;
+  migrationScripts: boolean;
   resourceDefaults: {
     cpuRequest: string;
     cpuLimit: string;

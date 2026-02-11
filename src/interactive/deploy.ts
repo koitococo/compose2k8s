@@ -41,6 +41,7 @@ export async function configureDeploy(): Promise<DeployOptions | symbol> {
     imagePullPolicy,
     outputFormat,
     outputDir: outputDir as string,
+    migrationScripts: true,
     resourceDefaults: {
       cpuRequest: '100m',
       cpuLimit: '500m',

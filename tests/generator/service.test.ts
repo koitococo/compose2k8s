@@ -15,6 +15,7 @@ function makeConfig(): WizardConfig {
       imagePullPolicy: 'IfNotPresent',
       outputFormat: 'plain',
       outputDir: './k8s',
+      migrationScripts: true,
       resourceDefaults: {
         cpuRequest: '100m', cpuLimit: '500m',
         memoryRequest: '128Mi', memoryLimit: '512Mi',

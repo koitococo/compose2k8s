@@ -72,11 +72,13 @@ export function generateManifests(input: GenerateInput): GeneratorOutput {
   }
 
   // Migration scripts
-  const migrationScripts = generateMigrationScripts(
-    analysis,
-    config.selectedServices,
-    config.deploy.namespace,
-  );
+  const migrationScripts = config.deploy.migrationScripts
+    ? generateMigrationScripts(
+        analysis,
+        config.selectedServices,
+        config.deploy.namespace,
+      )
+    : [];
 
   // README
   const readme = generateReadme(manifests, config);

@@ -59,6 +59,7 @@ export function generateDefaults(
       imagePullPolicy: 'IfNotPresent',
       outputFormat: overrides.outputFormat ?? 'plain',
       outputDir: overrides.outputDir ?? './k8s',
+      migrationScripts: true,
       resourceDefaults: {
         cpuRequest: '100m',
         cpuLimit: '500m',
