@@ -42,6 +42,7 @@ const deploySchema = z.object({
   imagePullPolicy: z
     .enum(['Always', 'IfNotPresent', 'Never'])
     .default('IfNotPresent'),
+  imagePullSecrets: z.array(z.string()).default([]),
   format: z.enum(['plain', 'single-file']).default('plain'),
   outputDir: z.string().default('./k8s'),
   migrationScripts: z.boolean().default(true),

@@ -22,6 +22,7 @@ export interface ConvertOptions {
   format?: 'plain' | 'single-file';
   namespace?: string;
   autoClean?: AutoCleanMode;
+  imagePullSecret?: string;
 }
 
 export async function convert(options: ConvertOptions): Promise<void> {
@@ -95,6 +96,12 @@ export async function convert(options: ConvertOptions): Promise<void> {
   if (options.output) config.deploy.outputDir = options.output;
   if (options.format) config.deploy.outputFormat = options.format;
   if (options.namespace) config.deploy.namespace = options.namespace;
+  if (options.imagePullSecret) {
+    config.deploy.imagePullSecrets = options.imagePullSecret
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
 
   // Phase 4: Generate
   s.start('Generating Kubernetes manifests...');

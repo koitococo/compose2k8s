@@ -14,6 +14,7 @@ function makeConfig(overrides: Partial<WizardConfig> = {}): WizardConfig {
     deploy: {
       namespace: 'default',
       imagePullPolicy: 'IfNotPresent',
+      imagePullSecrets: [],
       outputFormat: 'plain',
       outputDir: './k8s',
       migrationScripts: true,
@@ -148,6 +149,29 @@ describe('generateDeployment', () => {
     const spec = result.manifest.spec as Record<string, unknown>;
 
     expect(spec.replicas).toBe(5);
+  });
+
+  it('includes imagePullSecrets when configured', () => {
+    const config = makeConfig();
+    config.deploy.imagePullSecrets = ['my-registry-secret', 'other-secret'];
+    const result = generateDeployment('api', makeAnalyzed(), config);
+    const spec = result.manifest.spec as Record<string, unknown>;
+    const template = spec.template as Record<string, unknown>;
+    const podSpec = template.spec as Record<string, unknown>;
+
+    expect(podSpec.imagePullSecrets).toEqual([
+      { name: 'my-registry-secret' },
+      { name: 'other-secret' },
+    ]);
+  });
+
+  it('omits imagePullSecrets when empty', () => {
+    const result = generateDeployment('api', makeAnalyzed(), makeConfig());
+    const spec = result.manifest.spec as Record<string, unknown>;
+    const template = spec.template as Record<string, unknown>;
+    const podSpec = template.spec as Record<string, unknown>;
+
+    expect(podSpec.imagePullSecrets).toBeUndefined();
   });
 
   it('workloadOverrides replicas take precedence over compose deploy.replicas', () => {

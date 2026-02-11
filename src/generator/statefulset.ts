@@ -64,6 +64,9 @@ export function generateStatefulSet(
       template: {
         metadata: { labels: { ...labels, ...selector } },
         spec: {
+          ...(config.deploy.imagePullSecrets?.length
+            ? { imagePullSecrets: config.deploy.imagePullSecrets.map((name) => ({ name })) }
+            : {}),
           ...(container.initContainers?.length
             ? { initContainers: container.initContainers }
             : {}),

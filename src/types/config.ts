@@ -25,6 +25,7 @@ export interface StorageConfig {
 export interface DeployOptions {
   namespace: string;
   imagePullPolicy: 'Always' | 'IfNotPresent' | 'Never';
+  imagePullSecrets: string[];
   outputFormat: 'plain' | 'single-file';
   outputDir: string;
   migrationScripts: boolean;

@@ -69,6 +69,7 @@ export function generateDefaults(
     deploy: {
       namespace: overrides.namespace ?? 'default',
       imagePullPolicy: 'IfNotPresent',
+      imagePullSecrets: [],
       outputFormat: overrides.outputFormat ?? 'plain',
       outputDir: overrides.outputDir ?? './k8s',
       migrationScripts: true,

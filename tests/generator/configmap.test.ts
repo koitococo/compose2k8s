@@ -14,6 +14,7 @@ function makeConfig(): WizardConfig {
     deploy: {
       namespace: 'default',
       imagePullPolicy: 'IfNotPresent',
+      imagePullSecrets: [],
       outputFormat: 'plain',
       outputDir: './k8s',
       migrationScripts: true,

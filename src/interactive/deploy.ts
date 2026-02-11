@@ -36,9 +36,33 @@ export async function configureDeploy(): Promise<DeployOptions | symbol> {
   });
   if (p.isCancel(outputDir)) return outputDir;
 
+  const hasPrivateRegistry = await p.confirm({
+    message: 'Do you need image pull secrets for private registries?',
+    initialValue: false,
+  });
+  if (p.isCancel(hasPrivateRegistry)) return hasPrivateRegistry;
+
+  let imagePullSecrets: string[] = [];
+  if (hasPrivateRegistry) {
+    const secrets = await p.text({
+      message: 'Image pull secret name(s):',
+      placeholder: 'my-registry-secret (comma-separated for multiple)',
+      validate: (val) => {
+        if (!val.trim()) return 'At least one secret name is required';
+      },
+    });
+    if (p.isCancel(secrets)) return secrets;
+
+    imagePullSecrets = (secrets as string)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
   return {
     namespace: namespace as string,
     imagePullPolicy,
+    imagePullSecrets,
     outputFormat,
     outputDir: outputDir as string,
     migrationScripts: true,

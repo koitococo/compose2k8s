@@ -25,6 +25,10 @@ program
     '--auto-clean <mode>',
     'Action when output dir exists: force, never, or interactive',
   )
+  .option(
+    '--image-pull-secret <names>',
+    'Image pull secret name(s), comma-separated',
+  )
   .action(convert);
 
 // Validate command

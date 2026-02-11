@@ -167,6 +167,7 @@ function resolveDeploy(
   return {
     namespace: d.namespace,
     imagePullPolicy: d.imagePullPolicy,
+    imagePullSecrets: d.imagePullSecrets,
     outputFormat: d.format,
     outputDir: d.outputDir,
     migrationScripts: d.migrationScripts,
