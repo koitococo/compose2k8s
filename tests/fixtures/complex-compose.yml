@@ -1,0 +1,124 @@
+version: "3.8"
+
+services:
+  proxy:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs/ssl.key:/etc/ssl/private/ssl.key:ro
+      - ./certs/ssl.crt:/etc/ssl/certs/ssl.crt:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+  app:
+    image: myapp:latest
+    command: "npm start"
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_URL: redis://cache:6379
+      JWT_SECRET: ${JWT_SECRET}
+    env_file:
+      - ./app.env
+    volumes:
+      - ./config/app.json:/app/config.json:ro
+      - app-logs:/app/logs
+      - /tmp/app-cache:/tmp/cache
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`app.example.com`)"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_DB: appdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    restart: unless-stopped
+
+  worker:
+    image: myapp:latest
+    command: "npm run worker"
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_URL: redis://cache:6379
+    depends_on:
+      - db
+      - cache
+    networks:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redis-data:
+  app-logs:
+
+networks:
+  frontend:
+  backend:

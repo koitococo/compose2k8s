@@ -1,0 +1,131 @@
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { parse as parseYaml } from 'yaml';
+import { composeSchema } from './schema.js';
+import { parseEnvFile, interpolateAll } from './env.js';
+import {
+  normalizeEnvironment,
+  normalizePorts,
+  normalizeVolumeMounts,
+  normalizeDependsOn,
+  normalizeLabels,
+} from './normalize.js';
+import type { ComposeProject, ComposeService, ParseResult } from '../types/compose.js';
+
+export interface ParseOptions {
+  file: string;
+  envFile?: string;
+}
+
+const COMPOSE_FILE_NAMES = [
+  'compose.yaml',
+  'compose.yml',
+  'docker-compose.yml',
+  'docker-compose.yaml',
+];
+
+/**
+ * Auto-detect the compose file in a directory.
+ */
+export function findComposeFile(dir: string): string | null {
+  for (const name of COMPOSE_FILE_NAMES) {
+    const fullPath = resolve(dir, name);
+    if (existsSync(fullPath)) return fullPath;
+  }
+  return null;
+}
+
+/**
+ * Find .env file next to the compose file.
+ */
+export function findEnvFile(composeFilePath: string): string | null {
+  const envPath = resolve(dirname(composeFilePath), '.env');
+  return existsSync(envPath) ? envPath : null;
+}
+
+/**
+ * Parse a Docker Compose file into a normalized ComposeProject.
+ */
+export async function parseComposeFile(options: ParseOptions): Promise<ParseResult> {
+  const warnings: string[] = [];
+
+  // Read compose file
+  const content = await readFile(options.file, 'utf-8');
+  const raw = parseYaml(content);
+
+  // Load env file
+  let env: Record<string, string> = { ...process.env as Record<string, string> };
+  const envFilePath = options.envFile ?? findEnvFile(options.file);
+  if (envFilePath && existsSync(envFilePath)) {
+    const envContent = await readFile(envFilePath, 'utf-8');
+    const fileEnv = parseEnvFile(envContent);
+    env = { ...env, ...fileEnv };
+  }
+
+  // Interpolate variables
+  const interpolated = interpolateAll(raw, env);
+
+  // Validate with zod
+  const parsed = composeSchema.parse(interpolated);
+
+  // Build top-level volume set for disambiguation
+  const topLevelVolumes = new Set(Object.keys(parsed.volumes ?? {}));
+
+  // Normalize services
+  const services: Record<string, ComposeService> = {};
+  for (const [name, rawService] of Object.entries(parsed.services)) {
+    const svc = rawService as Record<string, unknown>;
+
+    // Handle env_file: load additional env files and merge into environment
+    let envFromFiles: Record<string, string> = {};
+    if (svc.env_file) {
+      const envFiles = Array.isArray(svc.env_file) ? svc.env_file : [svc.env_file];
+      for (const ef of envFiles) {
+        const efPath = typeof ef === 'string' ? ef : (ef as { path: string }).path;
+        const fullPath = resolve(dirname(options.file), efPath);
+        if (existsSync(fullPath)) {
+          const efContent = await readFile(fullPath, 'utf-8');
+          envFromFiles = { ...envFromFiles, ...parseEnvFile(efContent) };
+        } else {
+          warnings.push(`env_file not found for service "${name}": ${efPath}`);
+        }
+      }
+    }
+
+    const normalizedEnv = {
+      ...envFromFiles,
+      ...normalizeEnvironment(svc.environment as Parameters<typeof normalizeEnvironment>[0]),
+    };
+
+    const normalizedNetworks = svc.networks
+      ? Array.isArray(svc.networks)
+        ? svc.networks as string[]
+        : Object.keys(svc.networks as Record<string, unknown>)
+      : undefined;
+
+    services[name] = {
+      ...svc,
+      environment: normalizedEnv,
+      ports: normalizePorts(svc.ports as Parameters<typeof normalizePorts>[0]),
+      volumes: normalizeVolumeMounts(
+        svc.volumes as Parameters<typeof normalizeVolumeMounts>[0],
+        topLevelVolumes,
+      ),
+      depends_on: normalizeDependsOn(
+        svc.depends_on as Parameters<typeof normalizeDependsOn>[0],
+      ),
+      labels: normalizeLabels(svc.labels as Parameters<typeof normalizeLabels>[0]),
+      networks: normalizedNetworks,
+    } as ComposeService;
+  }
+
+  const project: ComposeProject = {
+    version: parsed.version,
+    services,
+    volumes: (parsed.volumes as ComposeProject['volumes']) ?? {},
+    networks: (parsed.networks as ComposeProject['networks']) ?? {},
+  };
+
+  return { project, warnings, sourceFile: options.file };
+}
