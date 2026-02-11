@@ -6,10 +6,11 @@ import { configureIngress } from './ingress.js';
 import { configureSecrets } from './secrets.js';
 import { configureStorage } from './storage.js';
 import { configureHealth } from './health.js';
+import { configureResources } from './resources.js';
 import { configureDeploy } from './deploy.js';
 
 /**
- * Run the interactive 6-step wizard.
+ * Run the interactive 7-step wizard.
  */
 export async function runWizard(analysis: AnalysisResult): Promise<WizardConfig | null> {
   p.intro('compose2k8s — Docker Compose → Kubernetes');
@@ -21,7 +22,7 @@ export async function runWizard(analysis: AnalysisResult): Promise<WizardConfig 
     return null;
   }
 
-  // Step 2: Ingress
+  // Step 2: Ingress / Gateway API
   const ingress = await configureIngress(analysis, selectedServices);
   if (p.isCancel(ingress)) {
     p.cancel('Conversion cancelled.');
@@ -49,7 +50,14 @@ export async function runWizard(analysis: AnalysisResult): Promise<WizardConfig 
     return null;
   }
 
-  // Step 6: Deploy options
+  // Step 6: Resource limits
+  const resourceOverrides = await configureResources(analysis, selectedServices);
+  if (p.isCancel(resourceOverrides)) {
+    p.cancel('Conversion cancelled.');
+    return null;
+  }
+
+  // Step 7: Deploy options
   const deploy = await configureDeploy();
   if (p.isCancel(deploy)) {
     p.cancel('Conversion cancelled.');
@@ -64,6 +72,7 @@ export async function runWizard(analysis: AnalysisResult): Promise<WizardConfig 
     envClassification,
     storageConfig,
     initContainers: health.initContainers,
+    resourceOverrides,
     deploy,
   };
 }

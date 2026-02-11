@@ -55,6 +55,7 @@ export function generateDefaults(
     envClassification,
     storageConfig,
     initContainers: 'wait-for-port',
+    resourceOverrides: {},
     deploy: {
       namespace: overrides.namespace ?? 'default',
       imagePullPolicy: 'IfNotPresent',

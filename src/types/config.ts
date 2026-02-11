@@ -36,11 +36,19 @@ export interface DeployOptions {
   };
 }
 
+export interface ResourceConfig {
+  cpuRequest: string;
+  cpuLimit: string;
+  memoryRequest: string;
+  memoryLimit: string;
+}
+
 export interface WizardConfig {
   selectedServices: string[];
   ingress: IngressConfig;
   envClassification: Record<string, Record<string, 'configmap' | 'secret'>>;
   storageConfig: StorageConfig[];
   initContainers: 'wait-for-port' | 'none';
+  resourceOverrides: Record<string, ResourceConfig>;
   deploy: DeployOptions;
 }

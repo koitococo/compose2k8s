@@ -49,6 +49,7 @@ export const configFileSchema = z.object({
   secrets: z.record(z.string(), z.record(z.string(), z.enum(['configmap', 'secret']))).optional(),
   storage: z.array(storageItemSchema).optional(),
   initContainers: z.enum(['wait-for-port', 'none']).default('wait-for-port'),
+  resources: z.record(z.string(), resourcesSchema).optional(),
   deploy: deploySchema.default({}),
 });
 

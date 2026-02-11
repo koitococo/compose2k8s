@@ -182,8 +182,8 @@ function buildResources(
   config: WizardConfig,
 ): Record<string, unknown> {
   const deploy = analyzed.service.deploy;
-  const defaults = config.deploy.resourceDefaults;
 
+  // Priority 1: Compose file deploy.resources
   if (deploy?.resources) {
     const result: Record<string, unknown> = {};
     if (deploy.resources.limits) {
@@ -201,7 +201,23 @@ function buildResources(
     return result;
   }
 
-  // Use defaults
+  // Priority 2: Per-service overrides from wizard
+  const override = config.resourceOverrides?.[analyzed.name];
+  if (override) {
+    return {
+      requests: {
+        cpu: override.cpuRequest,
+        memory: override.memoryRequest,
+      },
+      limits: {
+        cpu: override.cpuLimit,
+        memory: override.memoryLimit,
+      },
+    };
+  }
+
+  // Priority 3: Global defaults
+  const defaults = config.deploy.resourceDefaults;
   return {
     requests: {
       cpu: defaults.cpuRequest,
