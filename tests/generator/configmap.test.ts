@@ -6,6 +6,7 @@ import type { WizardConfig } from '../../src/types/config.js';
 function makeConfig(): WizardConfig {
   return {
     selectedServices: ['api'],
+    workloadOverrides: {},
     ingress: { enabled: false, tls: false, certManager: false, controller: 'none', routes: [] },
     envClassification: {},
     storageConfig: [],

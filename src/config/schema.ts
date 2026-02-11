@@ -32,6 +32,11 @@ const resourcesSchema = z.object({
   memoryLimit: z.string().default('512Mi'),
 });
 
+const workloadOverrideSchema = z.object({
+  workloadType: z.enum(['Deployment', 'StatefulSet']),
+  replicas: z.number().int().min(1).default(1),
+});
+
 const deploySchema = z.object({
   namespace: z.string().default('default'),
   imagePullPolicy: z
@@ -48,6 +53,7 @@ export const configFileSchema = z.object({
   ingress: ingressSchema.optional(),
   secrets: z.record(z.string(), z.record(z.string(), z.enum(['configmap', 'secret']))).optional(),
   storage: z.array(storageItemSchema).optional(),
+  workloads: z.record(z.string(), workloadOverrideSchema).optional(),
   initContainers: z.enum(['wait-for-port', 'none']).default('wait-for-port'),
   resources: z.record(z.string(), resourcesSchema).optional(),
   deploy: deploySchema.default({}),

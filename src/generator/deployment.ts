@@ -19,7 +19,9 @@ export function generateDeployment(
 
   const { container, volumes } = buildContainerSpec(serviceName, analyzed, config, allServices);
 
-  const replicas = analyzed.service.deploy?.replicas;
+  const replicas =
+    config.workloadOverrides?.[serviceName]?.replicas ??
+    analyzed.service.deploy?.replicas;
 
   const manifest: K8sManifest = {
     apiVersion: 'apps/v1',

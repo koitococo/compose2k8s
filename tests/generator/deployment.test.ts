@@ -6,6 +6,7 @@ import type { WizardConfig } from '../../src/types/config.js';
 function makeConfig(overrides: Partial<WizardConfig> = {}): WizardConfig {
   return {
     selectedServices: ['api'],
+    workloadOverrides: {},
     ingress: { enabled: false, tls: false, certManager: false, controller: 'none', routes: [] },
     envClassification: {},
     storageConfig: [],
@@ -137,5 +138,27 @@ describe('generateDeployment', () => {
     const spec = result.manifest.spec as Record<string, unknown>;
 
     expect(spec.replicas).toBeUndefined();
+  });
+
+  it('uses replica count from workloadOverrides', () => {
+    const config = makeConfig({
+      workloadOverrides: { api: { workloadType: 'Deployment', replicas: 5 } },
+    });
+    const result = generateDeployment('api', makeAnalyzed(), config);
+    const spec = result.manifest.spec as Record<string, unknown>;
+
+    expect(spec.replicas).toBe(5);
+  });
+
+  it('workloadOverrides replicas take precedence over compose deploy.replicas', () => {
+    const analyzed = makeAnalyzed();
+    analyzed.service.deploy = { replicas: 3 };
+    const config = makeConfig({
+      workloadOverrides: { api: { workloadType: 'Deployment', replicas: 7 } },
+    });
+    const result = generateDeployment('api', analyzed, config);
+    const spec = result.manifest.spec as Record<string, unknown>;
+
+    expect(spec.replicas).toBe(7);
   });
 });

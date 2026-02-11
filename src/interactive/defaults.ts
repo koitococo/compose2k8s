@@ -1,5 +1,5 @@
 import type { AnalysisResult } from '../types/analysis.js';
-import type { WizardConfig, StorageConfig } from '../types/config.js';
+import type { WizardConfig, StorageConfig, WorkloadOverride } from '../types/config.js';
 import { toK8sName } from '../utils/k8s-names.js';
 
 /**
@@ -42,8 +42,18 @@ export function generateDefaults(
     }
   }
 
+  // Build workload overrides from analysis (preserve detected values)
+  const workloadOverrides: Record<string, WorkloadOverride> = {};
+  for (const [name, svc] of Object.entries(analysis.services)) {
+    workloadOverrides[name] = {
+      workloadType: svc.workloadType,
+      replicas: svc.service.deploy?.replicas ?? 1,
+    };
+  }
+
   return {
     selectedServices,
+    workloadOverrides,
     ingress: {
       enabled: false,
       mode: 'ingress',

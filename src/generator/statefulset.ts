@@ -45,7 +45,9 @@ export function generateStatefulSet(
     };
   });
 
-  const replicas = analyzed.service.deploy?.replicas;
+  const replicas =
+    config.workloadOverrides?.[serviceName]?.replicas ??
+    analyzed.service.deploy?.replicas;
 
   const statefulSet: K8sManifest = {
     apiVersion: 'apps/v1',

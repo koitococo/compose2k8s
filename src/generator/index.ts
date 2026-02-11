@@ -35,8 +35,11 @@ export function generateManifests(input: GenerateInput): GeneratorOutput {
       continue;
     }
 
-    // Workload (Deployment or StatefulSet)
-    if (analyzed.workloadType === 'StatefulSet') {
+    // Workload (Deployment or StatefulSet) — use override if present
+    const workloadType =
+      config.workloadOverrides?.[serviceName]?.workloadType ?? analyzed.workloadType;
+
+    if (workloadType === 'StatefulSet') {
       const ssManifests = generateStatefulSet(serviceName, analyzed, config, analysis.services);
       manifests.push(...ssManifests);
     } else {

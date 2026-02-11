@@ -43,8 +43,14 @@ export interface ResourceConfig {
   memoryLimit: string;
 }
 
+export interface WorkloadOverride {
+  workloadType: 'Deployment' | 'StatefulSet';
+  replicas: number;
+}
+
 export interface WizardConfig {
   selectedServices: string[];
+  workloadOverrides: Record<string, WorkloadOverride>;
   ingress: IngressConfig;
   envClassification: Record<string, Record<string, 'configmap' | 'secret'>>;
   storageConfig: StorageConfig[];

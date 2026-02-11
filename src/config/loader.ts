@@ -23,6 +23,7 @@ export async function loadConfigFile(
   const config: WizardConfig = {
     ...defaults,
     selectedServices: resolveServices(userConfig, defaults, analysis, warnings),
+    workloadOverrides: resolveWorkloads(userConfig, defaults, analysis, warnings),
     ingress: resolveIngress(userConfig, defaults),
     envClassification: resolveSecrets(userConfig, defaults, analysis, warnings),
     storageConfig: resolveStorage(userConfig, defaults),
@@ -52,6 +53,30 @@ function resolveServices(
     }
   }
   return valid.length > 0 ? valid : defaults.selectedServices;
+}
+
+function resolveWorkloads(
+  userConfig: ConfigFile,
+  defaults: WizardConfig,
+  analysis: AnalysisResult,
+  warnings: string[],
+): WizardConfig['workloadOverrides'] {
+  const result = { ...defaults.workloadOverrides };
+
+  if (!userConfig.workloads) return result;
+
+  for (const [svcName, override] of Object.entries(userConfig.workloads)) {
+    if (!analysis.services[svcName]) {
+      warnings.push(`Unknown service "${svcName}" in workloads config — skipping.`);
+      continue;
+    }
+    result[svcName] = {
+      workloadType: override.workloadType,
+      replicas: override.replicas,
+    };
+  }
+
+  return result;
 }
 
 function resolveIngress(
