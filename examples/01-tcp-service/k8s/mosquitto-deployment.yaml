@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: mqtt
+  labels:
+    app.kubernetes.io/name: mosquitto
+    app.kubernetes.io/managed-by: compose2k8s
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mosquitto
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mosquitto
+        app.kubernetes.io/managed-by: compose2k8s
+    spec:
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1883
+          volumeMounts:
+            - name: mosquitto-mosquitto-conf
+              mountPath: /mosquitto/config/mosquitto.conf
+              readOnly: true
+              subPath: mosquitto.conf
+            - name: mosquitto-data
+              mountPath: /mosquitto/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: mosquitto-mosquitto-conf
+          configMap:
+            name: mosquitto-mosquitto-mosquitto-conf
+        - name: mosquitto-data
+          persistentVolumeClaim:
+            claimName: mosquitto-data

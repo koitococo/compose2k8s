@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: fullstack
+  labels:
+    app.kubernetes.io/name: api
+    app.kubernetes.io/managed-by: compose2k8s
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api
+        app.kubernetes.io/managed-by: compose2k8s
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - i=0; until nc -z postgres 5432; do i=$((i+1)); if [ $i -ge 150 ]; then echo "Timeout waiting for postgres after 150 attempts"; exit 1; fi; echo "Waiting for postgres... ($i/150)"; sleep 2; done
+        - name: wait-for-redis
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - i=0; until nc -z redis 6379; do i=$((i+1)); if [ $i -ge 150 ]; then echo "Timeout waiting for redis after 150 attempts"; exit 1; fi; echo "Waiting for redis... ($i/150)"; sleep 2; done
+      containers:
+        - name: api
+          image: node:20-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: REDIS_URL
+            - name: API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: API_SECRET
+          envFrom:
+            - configMapRef:
+                name: api-env
+          args:
+            - node
+            - server.js
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            exec: &a1
+              command:
+                - curl
+                - -f
+                - http://localhost:3000/health
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            exec: *a1
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3

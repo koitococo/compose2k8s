@@ -2,3 +2,4 @@ node_modules
 dist
 *.tgz
 k8s/
+!examples/*/k8s/

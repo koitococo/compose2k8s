@@ -1,0 +1,8 @@
+services:
+  - mosquitto
+
+initContainers: none
+
+deploy:
+  namespace: mqtt
+  migrationScripts: false

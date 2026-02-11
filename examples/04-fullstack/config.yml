@@ -1,0 +1,36 @@
+services:
+  - nginx
+  - api
+  - postgres
+  - redis
+
+ingress:
+  domain: fullstack.example.com
+  tls: true
+  certManager: true
+  controller: nginx
+  routes:
+    - service: nginx
+      path: /
+      port: 80
+
+secrets:
+  api:
+    DATABASE_URL: secret
+    REDIS_URL: secret
+    API_SECRET: secret
+  postgres:
+    POSTGRES_PASSWORD: secret
+
+storage:
+  - volume: pgdata
+    size: 20Gi
+    storageClass: ""
+  - volume: redis-data
+    size: 5Gi
+
+initContainers: wait-for-port
+
+deploy:
+  namespace: fullstack
+  migrationScripts: true

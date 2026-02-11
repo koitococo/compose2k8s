@@ -1,0 +1,18 @@
+services:
+  - nginx
+
+ingress:
+  domain: static.example.com
+  tls: true
+  certManager: true
+  controller: nginx
+  routes:
+    - service: nginx
+      path: /
+      port: 80
+
+initContainers: none
+
+deploy:
+  namespace: static-site
+  migrationScripts: false
