@@ -53,11 +53,12 @@ describe('generateService', () => {
     expect(result!.manifest.metadata.name).toBe('api');
 
     const spec = result!.manifest.spec as Record<string, unknown>;
-    expect(spec.type).toBe('ClusterIP');
+    expect(spec.type).toBeUndefined();
 
     const ports = spec.ports as Array<Record<string, unknown>>;
     expect(ports[0].port).toBe(3000);
-    expect(ports[0].targetPort).toBe(3000);
+    expect(ports[0].targetPort).toBeUndefined();
+    expect(ports[0].protocol).toBeUndefined();
   });
 
   it('returns null when service has no ports', () => {

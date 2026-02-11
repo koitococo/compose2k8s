@@ -45,7 +45,7 @@ export function generateStatefulSet(
     };
   });
 
-  const replicas = analyzed.service.deploy?.replicas ?? 1;
+  const replicas = analyzed.service.deploy?.replicas;
 
   const statefulSet: K8sManifest = {
     apiVersion: 'apps/v1',
@@ -57,7 +57,7 @@ export function generateStatefulSet(
     },
     spec: {
       serviceName: `${k8sName}-headless`,
-      replicas,
+      ...(replicas != null && replicas !== 1 ? { replicas } : {}),
       selector: { matchLabels: selector },
       template: {
         metadata: { labels: { ...labels, ...selector } },
@@ -67,7 +67,6 @@ export function generateStatefulSet(
             : {}),
           containers: [container.main],
           ...(nonPvcVolumes.length ? { volumes: nonPvcVolumes } : {}),
-          restartPolicy: 'Always',
         },
       },
       ...(volumeClaimTemplates.length ? { volumeClaimTemplates } : {}),
@@ -86,12 +85,14 @@ export function generateStatefulSet(
     spec: {
       clusterIP: 'None',
       selector,
-      ports: analyzed.ports.map((p) => ({
-        port: p.containerPort,
-        targetPort: p.containerPort,
-        protocol: p.protocol.toUpperCase(),
-        name: `${p.protocol}-${p.containerPort}`,
-      })),
+      ports: analyzed.ports.map((p) => {
+        const proto = p.protocol.toUpperCase();
+        return {
+          port: p.containerPort,
+          ...(proto !== 'TCP' ? { protocol: proto } : {}),
+          name: `${p.protocol}-${p.containerPort}`,
+        };
+      }),
     },
   };
 

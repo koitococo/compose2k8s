@@ -79,7 +79,7 @@ describe('generateDeployment', () => {
 
     expect(containers[0].image).toBe('node:20-alpine');
     expect(containers[0].ports).toEqual([
-      { containerPort: 3000, protocol: 'TCP' },
+      { containerPort: 3000 },
     ]);
   });
 
@@ -120,5 +120,21 @@ describe('generateDeployment', () => {
     const spec = result.manifest.spec as Record<string, unknown>;
 
     expect(spec.replicas).toBe(3);
+  });
+
+  it('omits replicas when not explicitly set', () => {
+    const result = generateDeployment('api', makeAnalyzed(), makeConfig());
+    const spec = result.manifest.spec as Record<string, unknown>;
+
+    expect(spec.replicas).toBeUndefined();
+  });
+
+  it('omits replicas when explicitly set to 1', () => {
+    const analyzed = makeAnalyzed();
+    analyzed.service.deploy = { replicas: 1 };
+    const result = generateDeployment('api', analyzed, makeConfig());
+    const spec = result.manifest.spec as Record<string, unknown>;
+
+    expect(spec.replicas).toBeUndefined();
   });
 });

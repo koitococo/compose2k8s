@@ -19,7 +19,7 @@ export function generateDeployment(
 
   const { container, volumes } = buildContainerSpec(serviceName, analyzed, config, allServices);
 
-  const replicas = analyzed.service.deploy?.replicas ?? 1;
+  const replicas = analyzed.service.deploy?.replicas;
 
   const manifest: K8sManifest = {
     apiVersion: 'apps/v1',
@@ -30,7 +30,7 @@ export function generateDeployment(
       labels,
     },
     spec: {
-      replicas,
+      ...(replicas != null && replicas !== 1 ? { replicas } : {}),
       selector: { matchLabels: selector },
       template: {
         metadata: { labels: { ...labels, ...selector } },
@@ -40,7 +40,6 @@ export function generateDeployment(
             : {}),
           containers: [container.main],
           ...(volumes.length ? { volumes } : {}),
-          restartPolicy: 'Always',
         },
       },
     },

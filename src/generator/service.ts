@@ -18,12 +18,14 @@ export function generateService(
   const labels = standardLabels(serviceName);
   const selector = selectorLabels(serviceName);
 
-  const ports = analyzed.ports.map((p) => ({
-    port: p.containerPort,
-    targetPort: p.containerPort,
-    protocol: p.protocol.toUpperCase(),
-    name: `${p.protocol}-${p.containerPort}`,
-  }));
+  const ports = analyzed.ports.map((p) => {
+    const proto = p.protocol.toUpperCase();
+    return {
+      port: p.containerPort,
+      ...(proto !== 'TCP' ? { protocol: proto } : {}),
+      name: `${p.protocol}-${p.containerPort}`,
+    };
+  });
 
   const manifest: K8sManifest = {
     apiVersion: 'v1',
@@ -34,7 +36,6 @@ export function generateService(
       labels,
     },
     spec: {
-      type: 'ClusterIP',
       selector,
       ports,
     },

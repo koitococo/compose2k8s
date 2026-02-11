@@ -27,10 +27,13 @@ export function buildContainerSpec(
   const service = analyzed.service;
 
   // Container ports
-  const ports = analyzed.ports.map((p) => ({
-    containerPort: p.containerPort,
-    protocol: p.protocol.toUpperCase(),
-  }));
+  const ports = analyzed.ports.map((p) => {
+    const proto = p.protocol.toUpperCase();
+    return {
+      containerPort: p.containerPort,
+      ...(proto !== 'TCP' ? { protocol: proto } : {}),
+    };
+  });
 
   // Environment variables
   const env: Record<string, unknown>[] = [];
