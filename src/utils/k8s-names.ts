@@ -15,12 +15,14 @@ export function toK8sName(composeName: string): string {
     name = name.slice(0, 63).replace(/-$/, '');
   }
 
+  if (!name) return 'unnamed';
+
   // Must start with alphanumeric
   if (!/^[a-z0-9]/.test(name)) {
     name = 'x' + name;
   }
 
-  return name || 'unnamed';
+  return name;
 }
 
 /**
