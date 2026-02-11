@@ -1,4 +1,4 @@
-import type { AnalyzedService, AnalyzedVolume } from '../types/analysis.js';
+import type { AnalyzedService, AnalyzedVolume, AnalysisResult } from '../types/analysis.js';
 import type { WizardConfig } from '../types/config.js';
 import { toK8sName } from '../utils/k8s-names.js';
 import { healthcheckToProbes } from './probes.js';
@@ -21,6 +21,7 @@ export function buildContainerSpec(
   serviceName: string,
   analyzed: AnalyzedService,
   config: WizardConfig,
+  allServices?: Record<string, AnalyzedService>,
 ): ContainerResult {
   const k8sName = toK8sName(serviceName);
   const service = analyzed.service;
@@ -129,7 +130,7 @@ export function buildContainerSpec(
 
   // Init containers
   const initContainers = config.initContainers === 'wait-for-port'
-    ? generateInitContainers(analyzed, config)
+    ? generateInitContainers(analyzed, config, allServices)
     : [];
 
   return {

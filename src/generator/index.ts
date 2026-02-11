@@ -35,10 +35,10 @@ export function generateManifests(input: GenerateInput): GeneratorOutput {
 
     // Workload (Deployment or StatefulSet)
     if (analyzed.workloadType === 'StatefulSet') {
-      const ssManifests = generateStatefulSet(serviceName, analyzed, config);
+      const ssManifests = generateStatefulSet(serviceName, analyzed, config, analysis.services);
       manifests.push(...ssManifests);
     } else {
-      manifests.push(generateDeployment(serviceName, analyzed, config));
+      manifests.push(generateDeployment(serviceName, analyzed, config, analysis.services));
 
       // PVCs for Deployments (StatefulSets use volumeClaimTemplates)
       for (const vol of analyzed.volumes) {

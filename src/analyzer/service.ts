@@ -65,12 +65,15 @@ const NAME_CATEGORY_MAP: Record<string, ServiceCategory> = {
   server: 'api',
 };
 
+// These env patterns indicate the service IS that type (server-side config),
+// NOT that it connects to that type. Patterns like REDIS_URL or DATABASE_URL
+// indicate a client, not the server itself.
 const ENV_CATEGORY_PATTERNS: Array<[RegExp, ServiceCategory]> = [
-  [/^POSTGRES_/, 'database'],
-  [/^MYSQL_/, 'database'],
-  [/^MONGO_/, 'database'],
-  [/^REDIS_/, 'cache'],
-  [/^RABBITMQ_/, 'queue'],
+  [/^POSTGRES_(USER|PASSWORD|DB|HOST_AUTH_METHOD|INITDB)/, 'database'],
+  [/^MYSQL_(ROOT_PASSWORD|DATABASE|USER|PASSWORD|ALLOW)/, 'database'],
+  [/^MONGO_INITDB/, 'database'],
+  [/^REDIS_(PASSWORD|MAXMEMORY|APPENDONLY)$/, 'cache'],
+  [/^RABBITMQ_(DEFAULT_USER|DEFAULT_PASS|DEFAULT_VHOST)/, 'queue'],
 ];
 
 const STATEFUL_CATEGORIES: Set<ServiceCategory> = new Set([

@@ -11,12 +11,13 @@ export function generateStatefulSet(
   serviceName: string,
   analyzed: AnalyzedService,
   config: WizardConfig,
+  allServices?: Record<string, AnalyzedService>,
 ): GeneratedManifest[] {
   const k8sName = toK8sName(serviceName);
   const labels = standardLabels(serviceName);
   const selector = selectorLabels(serviceName);
 
-  const { container, volumes } = buildContainerSpec(serviceName, analyzed, config);
+  const { container, volumes } = buildContainerSpec(serviceName, analyzed, config, allServices);
 
   // Filter out PVC volumes — they become volumeClaimTemplates
   const pvcVolumes = analyzed.volumes.filter((v) => v.classification === 'pvc');
