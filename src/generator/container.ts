@@ -1,4 +1,4 @@
-import type { AnalyzedService, AnalyzedVolume, AnalysisResult } from '../types/analysis.js';
+import type { AnalyzedService, AnalyzedVolume } from '../types/analysis.js';
 import type { WizardConfig } from '../types/config.js';
 import { toK8sName } from '../utils/k8s-names.js';
 import { healthcheckToProbes } from './probes.js';
@@ -96,13 +96,13 @@ export function buildContainerSpec(
   const command = service.entrypoint
     ? Array.isArray(service.entrypoint)
       ? service.entrypoint
-      : service.entrypoint.split(/\s+/)
+      : parseShellWords(service.entrypoint)
     : undefined;
 
   const args = service.command
     ? Array.isArray(service.command)
       ? service.command
-      : service.command.split(/\s+/)
+      : parseShellWords(service.command)
     : undefined;
 
   // Resources
@@ -209,4 +209,46 @@ function buildResources(
       memory: defaults.memoryLimit,
     },
   };
+}
+
+/**
+ * Parse a shell command string into words, respecting quoted arguments.
+ * Handles single quotes, double quotes, and escaped characters.
+ */
+function parseShellWords(input: string): string[] {
+  const words: string[] = [];
+  let current = '';
+  let inSingle = false;
+  let inDouble = false;
+  let escaped = false;
+
+  for (const ch of input) {
+    if (escaped) {
+      current += ch;
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\' && !inSingle) {
+      escaped = true;
+      continue;
+    }
+    if (ch === "'" && !inDouble) {
+      inSingle = !inSingle;
+      continue;
+    }
+    if (ch === '"' && !inSingle) {
+      inDouble = !inDouble;
+      continue;
+    }
+    if (/\s/.test(ch) && !inSingle && !inDouble) {
+      if (current) {
+        words.push(current);
+        current = '';
+      }
+      continue;
+    }
+    current += ch;
+  }
+  if (current) words.push(current);
+  return words;
 }

@@ -13,12 +13,7 @@ export function generateIngress(
   if (!config.ingress.enabled || config.ingress.routes.length === 0) return null;
 
   const annotations: Record<string, string> = {};
-
-  if (config.ingress.controller === 'nginx') {
-    annotations['kubernetes.io/ingress.class'] = 'nginx';
-  } else if (config.ingress.controller === 'traefik') {
-    annotations['kubernetes.io/ingress.class'] = 'traefik';
-  }
+  const ingressClassName = config.ingress.controller ?? undefined;
 
   if (config.ingress.tls && config.ingress.certManager) {
     annotations['cert-manager.io/cluster-issuer'] = 'letsencrypt-prod';
@@ -54,6 +49,7 @@ export function generateIngress(
       ...(Object.keys(annotations).length ? { annotations } : {}),
     },
     spec: {
+      ...(ingressClassName ? { ingressClassName } : {}),
       ...(config.ingress.tls
         ? {
             tls: [

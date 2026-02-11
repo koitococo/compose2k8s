@@ -10,7 +10,7 @@ import { generateConfigMapsForService } from './configmap.js';
 import { generateSecretsForService } from './secret.js';
 import { generatePVC } from './pvc.js';
 import { generateReadme } from './readme.js';
-import { generateMigrationScripts, type MigrationScript } from './migration-script.js';
+import { generateMigrationScripts } from './migration-script.js';
 
 export interface GenerateInput {
   analysis: AnalysisResult;

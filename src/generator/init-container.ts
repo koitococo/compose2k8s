@@ -1,4 +1,4 @@
-import type { AnalyzedService, AnalysisResult } from '../types/analysis.js';
+import type { AnalyzedService } from '../types/analysis.js';
 import type { WizardConfig } from '../types/config.js';
 import { toK8sName } from '../utils/k8s-names.js';
 
@@ -13,6 +13,9 @@ const CATEGORY_DEFAULT_PORTS: Record<string, number> = {
   proxy: 80,
   api: 3000,
 };
+
+/** Maximum number of retries before the init container gives up. */
+const MAX_RETRIES = 150;
 
 /**
  * Generate init containers for wait-for-port dependency strategy.
@@ -34,11 +37,11 @@ export function generateInitContainers(
 
     initContainers.push({
       name: `wait-for-${depName}`,
-      image: 'busybox:1.36',
+      image: 'busybox:1.37',
       command: [
         'sh',
         '-c',
-        `until nc -z ${depName} ${depPort}; do echo "Waiting for ${dep}..."; sleep 2; done`,
+        `i=0; until nc -z ${depName} ${depPort}; do i=$((i+1)); if [ $i -ge ${MAX_RETRIES} ]; then echo "Timeout waiting for ${dep} after ${MAX_RETRIES} attempts"; exit 1; fi; echo "Waiting for ${dep}... ($i/${MAX_RETRIES})"; sleep 2; done`,
       ],
     });
   }

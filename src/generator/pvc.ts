@@ -1,5 +1,5 @@
 import type { AnalyzedVolume } from '../types/analysis.js';
-import type { WizardConfig, StorageConfig } from '../types/config.js';
+import type { WizardConfig } from '../types/config.js';
 import type { K8sManifest, GeneratedManifest } from '../types/k8s.js';
 import { toK8sName, standardLabels } from '../utils/k8s-names.js';
 

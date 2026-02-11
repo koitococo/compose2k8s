@@ -7,37 +7,30 @@ import type { DependencyGraph } from '../types/analysis.js';
 export function analyzeDependencies(
   services: Record<string, ComposeService>,
 ): DependencyGraph {
-  // Build adjacency list (service → dependencies)
+  const warnings: string[] = [];
+
+  // Build adjacency list (service → dependencies), filtering out missing targets
   const edges: Record<string, string[]> = {};
+  const allNodes = Object.keys(services);
+  const nodeSet = new Set(allNodes);
+
   for (const [name, service] of Object.entries(services)) {
-    edges[name] = Object.keys(service.depends_on);
+    const deps: string[] = [];
+    for (const dep of Object.keys(service.depends_on)) {
+      if (nodeSet.has(dep)) {
+        deps.push(dep);
+      } else {
+        warnings.push(`Service "${name}" depends on "${dep}", which does not exist`);
+      }
+    }
+    edges[name] = deps;
   }
 
   // Topological sort with cycle detection (Kahn's algorithm)
+  // inDegree[node] = number of dependencies that node has (edges pointing into it in startup order)
   const inDegree: Record<string, number> = {};
-  const allNodes = Object.keys(services);
-
   for (const node of allNodes) {
-    inDegree[node] = 0;
-  }
-
-  for (const [_node, deps] of Object.entries(edges)) {
-    for (const dep of deps) {
-      if (dep in inDegree) {
-        inDegree[dep] = (inDegree[dep] || 0);
-      }
-    }
-  }
-
-  // Count incoming edges (reverse of depends_on)
-  // If A depends_on B, then B must start first, so B → A in startup order
-  // inDegree counts how many services depend on each service
-  for (const node of allNodes) {
-    inDegree[node] = 0;
-  }
-  for (const [node, deps] of Object.entries(edges)) {
-    // node depends on each dep, so node has inDegree from deps
-    inDegree[node] = deps.filter((d) => d in inDegree).length;
+    inDegree[node] = edges[node].length;
   }
 
   const queue: string[] = [];
@@ -63,5 +56,5 @@ export function analyzeDependencies(
 
   const hasCycles = order.length !== allNodes.length;
 
-  return { edges, order, hasCycles };
+  return { edges, order, hasCycles, warnings };
 }

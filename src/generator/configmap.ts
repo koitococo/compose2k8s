@@ -1,9 +1,12 @@
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve, dirname, basename } from 'node:path';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { resolve, basename } from 'node:path';
 import type { AnalyzedService } from '../types/analysis.js';
 import type { WizardConfig } from '../types/config.js';
 import type { K8sManifest, GeneratedManifest } from '../types/k8s.js';
 import { toK8sName, standardLabels } from '../utils/k8s-names.js';
+
+/** Kubernetes ConfigMap size limit (1MB). */
+const MAX_CONFIGMAP_SIZE = 1_048_576;
 
 /**
  * Generate ConfigMaps for a service.
@@ -32,7 +35,22 @@ export function generateConfigMapsForService(
     if (sourceFile) {
       const fullPath = resolve(composeDir, sourceFile);
       if (existsSync(fullPath)) {
-        fileContent = readFileSync(fullPath, 'utf-8');
+        const fileStat = statSync(fullPath);
+        if (fileStat.size > MAX_CONFIGMAP_SIZE) {
+          warnings.push(
+            `Config file too large: ${sourceFile} (${(fileStat.size / 1024 / 1024).toFixed(1)}MB) exceeds Kubernetes 1MB ConfigMap limit. Using placeholder.`,
+          );
+        } else {
+          const raw = readFileSync(fullPath);
+          // Check for binary content (null bytes)
+          if (raw.includes(0)) {
+            warnings.push(
+              `Config file appears to be binary: ${sourceFile} (for ${serviceName}). Using placeholder.`,
+            );
+          } else {
+            fileContent = raw.toString('utf-8');
+          }
+        }
       } else {
         warnings.push(
           `Config file not found: ${sourceFile} (for ${serviceName}). Using placeholder.`,

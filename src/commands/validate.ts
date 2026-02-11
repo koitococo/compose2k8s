@@ -1,4 +1,4 @@
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import * as p from '@clack/prompts';

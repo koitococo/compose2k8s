@@ -61,6 +61,8 @@ export function analyzeProject(project: ComposeProject): AnalysisResult {
 
   const dependencyGraph = analyzeDependencies(project.services);
 
+  warnings.push(...dependencyGraph.warnings);
+
   if (dependencyGraph.hasCycles) {
     warnings.push('Circular dependency detected in service dependencies.');
   }

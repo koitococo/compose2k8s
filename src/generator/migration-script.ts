@@ -115,7 +115,7 @@ echo ""
 
 # Step 2: Copy dump to K8s pod
 echo "[2/3] Copying dump to Kubernetes pod..."
-POD=\$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
+POD=$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
 echo "  kubectl cp \${DUMP_FILE} \${NAMESPACE}/\${POD}:/tmp/\${DUMP_FILE}"
 echo ""
 
@@ -158,7 +158,7 @@ echo ""
 
 # Step 2: Copy to K8s
 echo "[2/3] Copying dump to Kubernetes pod..."
-POD=\$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
+POD=$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
 echo "  kubectl cp \${DUMP_FILE} \${NAMESPACE}/\${POD}:/tmp/\${DUMP_FILE}"
 echo ""
 
@@ -195,7 +195,7 @@ echo ""
 
 # Step 2: Copy to K8s
 echo "[2/3] Copying dump to Kubernetes pod..."
-POD=\$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
+POD=$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
 echo "  kubectl cp ./\${DUMP_DIR} \${NAMESPACE}/\${POD}:/tmp/\${DUMP_DIR}"
 echo ""
 
@@ -229,7 +229,7 @@ echo ""
 
 # Step 2: Copy to K8s
 echo "[2/3] Copying RDB to Kubernetes pod..."
-POD=\$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
+POD=$(kubectl get pods -n \${NAMESPACE} -l app.kubernetes.io/name=\${SERVICE} -o jsonpath='{.items[0].metadata.name}')
 echo "  kubectl cp ./\${DUMP_FILE} \${NAMESPACE}/\${POD}:/data/dump.rdb"
 echo ""
 

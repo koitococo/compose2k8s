@@ -33,6 +33,19 @@ export function normalizeEnvironment(
 }
 
 /**
+ * Validate that a port number is within the valid range (1-65535).
+ */
+function validatePort(value: number, raw: string): number {
+  if (Number.isNaN(value) || !Number.isInteger(value)) {
+    throw new Error(`Invalid port number: "${raw}" is not a valid integer`);
+  }
+  if (value < 1 || value > 65535) {
+    throw new Error(`Port number out of range: ${value} (must be 1-65535)`);
+  }
+  return value;
+}
+
+/**
  * Parse a port string like "8080:80", "80", "8080:80/udp" into a ComposePort.
  */
 function parsePortString(port: string): ComposePort {
@@ -42,7 +55,11 @@ function parsePortString(port: string): ComposePort {
   if (portStr.includes('/')) {
     const parts = portStr.split('/');
     portStr = parts[0];
-    protocol = parts[1] as 'tcp' | 'udp';
+    const proto = parts[1];
+    if (proto !== 'tcp' && proto !== 'udp') {
+      throw new Error(`Invalid port protocol: "${proto}" (must be tcp or udp)`);
+    }
+    protocol = proto;
   }
 
   // Handle IP binding like "0.0.0.0:8080:80"
@@ -50,21 +67,21 @@ function parsePortString(port: string): ComposePort {
   if (segments.length === 3) {
     // ip:published:target
     return {
-      target: parseInt(segments[2], 10),
-      published: parseInt(segments[1], 10),
+      target: validatePort(parseInt(segments[2], 10), segments[2]),
+      published: validatePort(parseInt(segments[1], 10), segments[1]),
       protocol,
     };
   }
   if (segments.length === 2) {
     return {
-      target: parseInt(segments[1], 10),
-      published: parseInt(segments[0], 10),
+      target: validatePort(parseInt(segments[1], 10), segments[1]),
+      published: validatePort(parseInt(segments[0], 10), segments[0]),
       protocol,
     };
   }
 
   return {
-    target: parseInt(segments[0], 10),
+    target: validatePort(parseInt(segments[0], 10), segments[0]),
     protocol,
   };
 }

@@ -53,6 +53,13 @@ export function healthcheckToProbes(
     livenessProbe.initialDelaySeconds = parseDuration(healthcheck.start_period);
   }
 
+  // Readiness probes should be more sensitive: shorter timeout, lower threshold
+  if (readinessProbe.timeoutSeconds && readinessProbe.timeoutSeconds > 5) {
+    readinessProbe.timeoutSeconds = Math.min(readinessProbe.timeoutSeconds, 5);
+  }
+  readinessProbe.failureThreshold = Math.min(readinessProbe.failureThreshold ?? 3, 3);
+  livenessProbe.failureThreshold = livenessProbe.failureThreshold ?? 5;
+
   return { livenessProbe, readinessProbe };
 }
 

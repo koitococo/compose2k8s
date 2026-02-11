@@ -47,6 +47,7 @@ export interface DependencyGraph {
   edges: Record<string, string[]>;
   order: string[];
   hasCycles: boolean;
+  warnings: string[];
 }
 
 export interface AnalysisResult {
