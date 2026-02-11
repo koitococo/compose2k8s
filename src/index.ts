@@ -21,6 +21,10 @@ program
   .option('--non-interactive', 'Use defaults without prompting')
   .option('--format <type>', 'Output format: plain or single-file')
   .option('--namespace <ns>', 'Kubernetes namespace')
+  .option(
+    '--auto-clean <mode>',
+    'Action when output dir exists: force, never, or interactive',
+  )
   .action(convert);
 
 // Validate command

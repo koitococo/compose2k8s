@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { access, readdir, rm } from 'node:fs/promises';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
 import { parseComposeFile } from '../parser/compose.js';
@@ -10,6 +11,8 @@ import { generateDefaults } from '../interactive/defaults.js';
 import { findComposeFile } from '../utils/detect.js';
 import { loadConfigFile } from '../config/loader.js';
 
+export type AutoCleanMode = 'force' | 'never' | 'interactive';
+
 export interface ConvertOptions {
   file?: string;
   envFile?: string;
@@ -18,6 +21,7 @@ export interface ConvertOptions {
   nonInteractive?: boolean;
   format?: 'plain' | 'single-file';
   namespace?: string;
+  autoClean?: AutoCleanMode;
 }
 
 export async function convert(options: ConvertOptions): Promise<void> {
@@ -107,6 +111,13 @@ export async function convert(options: ConvertOptions): Promise<void> {
     }
   }
 
+  // Pre-flight: check if output directory already exists
+  const outputDir = resolve(config.deploy.outputDir);
+  const autoClean: AutoCleanMode =
+    options.autoClean ?? (options.nonInteractive ? 'never' : 'interactive');
+  const shouldContinue = await handleExistingOutput(outputDir, autoClean);
+  if (!shouldContinue) return;
+
   // Phase 5: Write
   s.start('Writing files...');
   const writtenFiles = await writeOutput(output, config);
@@ -129,4 +140,54 @@ export async function convert(options: ConvertOptions): Promise<void> {
 
   console.log('');
   console.log(`Apply with: ${chalk.bold(`kubectl apply -f ${config.deploy.outputDir}/`)}`);
+}
+
+/**
+ * Check if output directory exists and has content.
+ * Returns true if we should continue, false to abort.
+ */
+async function handleExistingOutput(
+  outputDir: string,
+  mode: AutoCleanMode,
+): Promise<boolean> {
+  try {
+    await access(outputDir);
+  } catch {
+    // Directory doesn't exist — safe to proceed
+    return true;
+  }
+
+  // Check if directory has any files
+  const entries = await readdir(outputDir);
+  if (entries.length === 0) return true;
+
+  if (mode === 'force') {
+    await rm(outputDir, { recursive: true });
+    return true;
+  }
+
+  if (mode === 'never') {
+    p.log.error(
+      `Output directory "${outputDir}" already exists and is not empty. ` +
+        'Use --auto-clean=force to delete it, or choose a different output directory.',
+    );
+    process.exit(1);
+  }
+
+  // interactive
+  const action = await p.select({
+    message: `Output directory "${outputDir}" already exists with ${entries.length} file(s). What do you want to do?`,
+    options: [
+      { value: 'clean' as const, label: 'Delete and continue', hint: 'removes existing files' },
+      { value: 'abort' as const, label: 'Abort' },
+    ],
+  });
+
+  if (p.isCancel(action) || action === 'abort') {
+    p.cancel('Conversion cancelled.');
+    return false;
+  }
+
+  await rm(outputDir, { recursive: true });
+  return true;
 }
