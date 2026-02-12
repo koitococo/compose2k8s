@@ -59,6 +59,36 @@ describe('configFileSchema', () => {
     expect(result.deploy.migrationScripts).toBe(false);
   });
 
+  it('parses exposures correctly', () => {
+    const result = configFileSchema.parse({
+      exposures: {
+        api: { type: 'NodePort', nodePort: 30080 },
+        web: { type: 'Ingress', ingressPath: '/' },
+        db: { type: 'ClusterIP' },
+        cache: { type: 'LoadBalancer' },
+      },
+    });
+
+    expect(result.exposures!.api.type).toBe('NodePort');
+    expect(result.exposures!.api.nodePort).toBe(30080);
+    expect(result.exposures!.web.type).toBe('Ingress');
+    expect(result.exposures!.web.ingressPath).toBe('/');
+    expect(result.exposures!.db.type).toBe('ClusterIP');
+    expect(result.exposures!.cache.type).toBe('LoadBalancer');
+  });
+
+  it('rejects invalid exposure type', () => {
+    expect(() =>
+      configFileSchema.parse({ exposures: { api: { type: 'External' } } }),
+    ).toThrow();
+  });
+
+  it('rejects nodePort out of range', () => {
+    expect(() =>
+      configFileSchema.parse({ exposures: { api: { type: 'NodePort', nodePort: 80 } } }),
+    ).toThrow();
+  });
+
   it('rejects invalid initContainers value', () => {
     expect(() => configFileSchema.parse({ initContainers: 'invalid' })).toThrow();
   });

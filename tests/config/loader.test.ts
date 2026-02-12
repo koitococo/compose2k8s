@@ -97,6 +97,51 @@ describe('loadConfigFile', () => {
     expect(warnings.some((w) => w.includes('UNKNOWN_VAR'))).toBe(true);
   });
 
+  it('loads exposures from config file', async () => {
+    const configPath = await writeConfig({
+      exposures: {
+        api: { type: 'NodePort', nodePort: 30080 },
+        web: { type: 'Ingress', ingressPath: '/' },
+      },
+    });
+
+    const { config } = await loadConfigFile(configPath, analysis);
+
+    expect(config.serviceExposures.api).toEqual({ type: 'NodePort', nodePort: 30080 });
+    expect(config.serviceExposures.web).toEqual({ type: 'Ingress', ingressPath: '/' });
+    // db should still have default ClusterIP
+    expect(config.serviceExposures.db).toEqual({ type: 'ClusterIP' });
+  });
+
+  it('derives exposures from ingress routes when no explicit exposures', async () => {
+    const configPath = await writeConfig({
+      ingress: {
+        domain: 'app.example.com',
+        tls: true,
+        certManager: true,
+        controller: 'nginx',
+        routes: [{ service: 'api', path: '/api', port: 3000 }],
+      },
+    });
+
+    const { config } = await loadConfigFile(configPath, analysis);
+
+    expect(config.serviceExposures.api).toEqual({ type: 'Ingress', ingressPath: '/api' });
+    expect(config.serviceExposures.db).toEqual({ type: 'ClusterIP' });
+  });
+
+  it('warns on unknown service in exposures config', async () => {
+    const configPath = await writeConfig({
+      exposures: {
+        nonexistent: { type: 'NodePort' },
+      },
+    });
+
+    const { warnings } = await loadConfigFile(configPath, analysis);
+
+    expect(warnings).toContain('Unknown service "nonexistent" in exposures config — skipping.');
+  });
+
   it('throws on missing config file', async () => {
     await expect(
       loadConfigFile('/tmp/nonexistent-config.yml', analysis),

@@ -131,6 +131,60 @@ describe('E2E: convert pipeline', () => {
     expect(docs.length).toBe(output.manifests.length);
   });
 
+  it('default exposure is ClusterIP for non-interactive mode', async () => {
+    const { config } = await runConversion('basic-compose.yml', outputDir);
+
+    for (const name of config.selectedServices) {
+      expect(config.serviceExposures[name]).toEqual({ type: 'ClusterIP' });
+    }
+  });
+
+  it('generates NodePort service when exposure is NodePort', async () => {
+    const composeFile = resolve(fixturesDir, 'basic-compose.yml');
+    const workingDir = dirname(composeFile);
+    const parseResult = await parseComposeFile({ file: composeFile });
+    const analysis = analyzeProject(parseResult.project);
+    const config = generateDefaults(analysis, { outputDir });
+    config.serviceExposures.web = { type: 'NodePort', nodePort: 30080 };
+
+    const output = generateManifests({ analysis, config, workingDir });
+
+    const webService = output.manifests.find(
+      (m) => m.serviceName === 'web' && m.manifest.kind === 'Service',
+    );
+    expect(webService).toBeDefined();
+    const spec = webService!.manifest.spec as Record<string, unknown>;
+    expect(spec.type).toBe('NodePort');
+    const ports = spec.ports as Array<Record<string, unknown>>;
+    expect(ports[0].nodePort).toBe(30080);
+  });
+
+  it('generates Ingress manifest when exposure is Ingress', async () => {
+    const composeFile = resolve(fixturesDir, 'basic-compose.yml');
+    const workingDir = dirname(composeFile);
+    const parseResult = await parseComposeFile({ file: composeFile });
+    const analysis = analyzeProject(parseResult.project);
+    const config = generateDefaults(analysis, { outputDir });
+    config.serviceExposures.web = { type: 'Ingress', ingressPath: '/' };
+    config.ingress = {
+      enabled: true,
+      mode: 'ingress',
+      domain: 'app.example.com',
+      tls: true,
+      certManager: true,
+      controller: 'nginx',
+      routes: [{ serviceName: 'web', path: '/', port: 80 }],
+    };
+
+    const output = generateManifests({ analysis, config, workingDir });
+
+    const ingress = output.manifests.find((m) => m.manifest.kind === 'Ingress');
+    expect(ingress).toBeDefined();
+    const ingressSpec = ingress!.manifest.spec as Record<string, unknown>;
+    const rules = ingressSpec.rules as Array<Record<string, unknown>>;
+    expect(rules[0].host).toBe('app.example.com');
+  });
+
   it('produces probes for services with healthchecks', async () => {
     const { output } = await runConversion('fullstack-compose.yml', outputDir);
 
