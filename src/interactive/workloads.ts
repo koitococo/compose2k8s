@@ -66,9 +66,21 @@ export async function configureWorkloads(
     });
     if (p.isCancel(replicas)) return replicas;
 
+    const pullPolicy = await p.select({
+      message: `Image pull policy for ${name}:`,
+      options: [
+        { value: 'Always' as const, label: 'Always', hint: 'always pull image' },
+        { value: 'IfNotPresent' as const, label: 'IfNotPresent', hint: 'pull only if not cached' },
+        { value: 'Never' as const, label: 'Never', hint: 'use local image only' },
+      ],
+      initialValue: 'IfNotPresent' as const,
+    });
+    if (p.isCancel(pullPolicy)) return pullPolicy;
+
     overrides[name] = {
       workloadType,
       replicas: Number(replicas),
+      imagePullPolicy: pullPolicy,
     };
   }
 

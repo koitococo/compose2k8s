@@ -53,7 +53,7 @@ export async function convert(options: ConvertOptions): Promise<void> {
   const s = p.spinner();
 
   // Phase 1: Parse
-  s.start('Parsing compose file...');
+  s.start('[1/4] Parsing compose file...');
   let parseResult;
   try {
     parseResult = await parseComposeFile({
@@ -75,7 +75,7 @@ export async function convert(options: ConvertOptions): Promise<void> {
   }
 
   // Phase 2: Analyze
-  s.start('Analyzing services...');
+  s.start('[2/4] Analyzing services...');
   const analysis = analyzeProject(parseResult.project);
   s.stop('Analysis complete');
 
@@ -119,7 +119,7 @@ export async function convert(options: ConvertOptions): Promise<void> {
   }
 
   // Phase 4: Generate
-  s.start('Generating Kubernetes manifests...');
+  s.start('[3/4] Generating Kubernetes manifests...');
   const output = generateManifests({
     analysis,
     config,
@@ -141,7 +141,7 @@ export async function convert(options: ConvertOptions): Promise<void> {
   if (!shouldContinue) return;
 
   // Phase 5: Write
-  s.start('Writing files...');
+  s.start('[4/4] Writing files...');
   const writtenFiles = await writeOutput(output, config);
   s.stop(`Wrote ${writtenFiles.length} files to ${config.deploy.outputDir}/`);
 

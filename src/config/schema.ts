@@ -35,6 +35,7 @@ const resourcesSchema = z.object({
 const workloadOverrideSchema = z.object({
   workloadType: z.enum(['Deployment', 'StatefulSet']),
   replicas: z.number().int().min(1).default(1),
+  imagePullPolicy: z.enum(['Always', 'IfNotPresent', 'Never']).optional(),
 });
 
 const deploySchema = z.object({

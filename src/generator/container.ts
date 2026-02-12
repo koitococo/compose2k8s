@@ -120,7 +120,7 @@ export function buildContainerSpec(
   const main: Record<string, unknown> = {
     name: k8sName,
     image: service.image ?? `${k8sName}:latest`,
-    imagePullPolicy: config.deploy.imagePullPolicy,
+    imagePullPolicy: config.workloadOverrides?.[serviceName]?.imagePullPolicy ?? config.deploy.imagePullPolicy,
     ...(ports.length ? { ports } : {}),
     ...(env.length ? { env } : {}),
     ...(envFrom.length ? { envFrom } : {}),

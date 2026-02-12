@@ -47,6 +47,7 @@ export interface ResourceConfig {
 export interface WorkloadOverride {
   workloadType: 'Deployment' | 'StatefulSet';
   replicas: number;
+  imagePullPolicy?: 'Always' | 'IfNotPresent' | 'Never';
 }
 
 export interface WizardConfig {
