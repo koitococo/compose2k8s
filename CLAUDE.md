@@ -36,22 +36,23 @@ src/
 │   ├── volume.ts    # Classify volumes (configmap/secret/pvc/emptydir)
 │   ├── secrets.ts   # Detect sensitive env vars by name/value patterns
 │   └── dependency.ts # Build dependency graph, topological sort, cycle detection
-├── interactive/     # Phase 3: 8-step @clack/prompts wizard
-│   ├── wizard.ts    # Main flow: intro → 8 steps → outro
-│   ├── services.ts  # Step 1: multiselect services
-│   ├── workloads.ts # Step 2: override workload type (Deployment/StatefulSet) + replica count
-│   ├── ingress.ts   # Step 3: configure ingress (domain, TLS, controller, routes)
-│   ├── secrets.ts   # Step 4: review/override env var classifications
-│   ├── storage.ts   # Step 5: configure PVC storage (class, size, access mode)
-│   ├── health.ts    # Step 6: dependency handling (init containers) + probes
-│   ├── deploy.ts    # Step 7: namespace, imagePullPolicy, imagePullSecrets, output format/dir
-│   └── defaults.ts  # Generate WizardConfig without prompts (--non-interactive)
+├── interactive/     # Phase 3: Tree-menu @clack/prompts wizard (configure-by-exception)
+│   ├── tree-wizard.ts # Main flow: select services → tree menu → finalize
+│   ├── wizard.ts    # Legacy linear 8-step wizard (kept but not used by CLI)
+│   ├── services.ts  # Multiselect services (reused by tree wizard)
+│   ├── workloads.ts # Workload type/replica prompts (used by legacy wizard)
+│   ├── ingress.ts   # Ingress config prompts (used by legacy wizard)
+│   ├── secrets.ts   # Env var classification prompts (used by legacy wizard)
+│   ├── storage.ts   # PVC storage prompts (used by legacy wizard)
+│   ├── health.ts    # Dependency handling prompts (used by legacy wizard)
+│   ├── deploy.ts    # Deploy options prompts (used by legacy wizard)
+│   └── defaults.ts  # Generate WizardConfig without prompts (--non-interactive + tree wizard init)
 ├── generator/       # Phase 4: Produce K8s manifest objects
 │   ├── index.ts     # Orchestrator: generateManifests()
 │   ├── container.ts # Shared container spec builder (env, volumes, probes, resources)
 │   ├── deployment.ts
 │   ├── statefulset.ts  # Includes headless Service + volumeClaimTemplates
-│   ├── service.ts      # ClusterIP Service
+│   ├── service.ts      # Service (ClusterIP/NodePort/LoadBalancer based on serviceExposures)
 │   ├── ingress.ts      # Ingress with nginx/traefik annotations, TLS, cert-manager
 │   ├── configmap.ts    # File-based (from bind mounts) and env-based ConfigMaps
 │   ├── secret.ts       # stringData with REPLACE_ME placeholders (never real values)
@@ -71,7 +72,7 @@ src/
 ├── types/           # TypeScript interfaces (no runtime code)
 │   ├── compose.ts   # ComposeProject, ComposeService, ComposePort, etc.
 │   ├── analysis.ts  # AnalyzedService, ServiceCategory, WorkloadType, etc.
-│   ├── config.ts    # WizardConfig, IngressConfig, StorageConfig, DeployOptions, WorkloadOverride
+│   ├── config.ts    # WizardConfig, IngressConfig, StorageConfig, DeployOptions, WorkloadOverride, ServiceExposure, ExposureType
 │   └── k8s.ts       # K8sManifest, GeneratedManifest, GeneratorOutput
 ├── utils/
 │   ├── k8s-names.ts # toK8sName(), standardLabels(), selectorLabels()
@@ -98,6 +99,9 @@ tests/               # Mirrors src/ structure
 - **Port mapping** — container port (right side of `8080:80`) for K8s Service port + targetPort
 - **Env detection** — distinguishes server-config vars (`POSTGRES_USER` → this IS postgres) from client-connection vars (`REDIS_URL` → this CONNECTS TO redis)
 - **One service = one workload** — each compose service becomes its own Deployment or StatefulSet
+- **Per-service exposure types** — `serviceExposures` in WizardConfig maps each service to ClusterIP/NodePort/LoadBalancer/Ingress; generators read this to set Service `spec.type` and derive `ingress.routes`
+- **Tree-menu wizard** — interactive mode uses a configure-by-exception pattern: initialize with smart defaults, show a tree menu of services + global settings, users only edit what they want to change
+- **`ingress.routes` is derived** — computed from `serviceExposures` at finalization time; kept for backward compat with config files and generators
 - **Workload type override** — users can override auto-detected workload type (Deployment ↔ StatefulSet) and replica count per service via `workloadOverrides` in WizardConfig
 - **Output directory auto-clean** — `--auto-clean` flag (`force`/`never`/`interactive`) controls behavior when output dir already exists; defaults to `interactive` (prompt) or `never` (for `--non-interactive`)
 - **Image pull secrets** — optional `imagePullSecrets` in DeployOptions, added to PodSpec of both Deployments and StatefulSets for private registry access
