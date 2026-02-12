@@ -101,7 +101,7 @@ tests/               # Mirrors src/ structure
 - **Workload type override** — users can override auto-detected workload type (Deployment ↔ StatefulSet) and replica count per service via `workloadOverrides` in WizardConfig
 - **Output directory auto-clean** — `--auto-clean` flag (`force`/`never`/`interactive`) controls behavior when output dir already exists; defaults to `interactive` (prompt) or `never` (for `--non-interactive`)
 - **Image pull secrets** — optional `imagePullSecrets` in DeployOptions, added to PodSpec of both Deployments and StatefulSets for private registry access
-- **Init containers use actual ports** — looks up dependency's first exposed port from analysis, falls back to category defaults (5432 for database, 6379 for cache)
+- **Init containers use native readiness checks** — for known images (postgres→`pg_isready`, mysql→`mysqladmin ping`, mariadb→`mariadb-admin ping`, redis→`redis-cli ping`, mongo→`mongosh ping`), uses the dependency's own image with built-in CLI tools; falls back to busybox `nc` port probe for unknown services
 - **`--chdir` working directory** — overrides the base directory for resolving bind mounts, env_file, and .env auto-detection; `-f` is optional and auto-detects compose file in cwd or `--chdir` directory
 - **Compose entrypoint → K8s command, compose command → K8s args**
 
