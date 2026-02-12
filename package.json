@@ -4,7 +4,7 @@
   "description": "Convert Docker Compose files to Kubernetes manifests with an interactive wizard",
   "type": "module",
   "bin": {
-    "compose2k8s": "./dist/index.mjs"
+    "compose2k8s": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsx src/index.ts",

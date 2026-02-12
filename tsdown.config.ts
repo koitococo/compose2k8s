@@ -3,6 +3,9 @@ import { defineConfig } from 'tsdown';
 export default defineConfig({
   entry: ['src/index.ts'],
   format: 'esm',
-  banner: { js: '#!/usr/bin/env node' },
+  outputOptions: {
+    banner: '#!/usr/bin/env node\n',
+  },
   clean: true,
+  noExternal: [/.*/],
 });
