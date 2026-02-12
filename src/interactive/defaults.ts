@@ -1,5 +1,5 @@
 import type { AnalysisResult } from '../types/analysis.js';
-import type { WizardConfig, StorageConfig, WorkloadOverride } from '../types/config.js';
+import type { WizardConfig, StorageConfig, WorkloadOverride, ServiceExposure } from '../types/config.js';
 import { toK8sName } from '../utils/k8s-names.js';
 
 /**
@@ -51,9 +51,16 @@ export function generateDefaults(
     };
   }
 
+  // Default exposure: ClusterIP for all services
+  const serviceExposures: Record<string, ServiceExposure> = {};
+  for (const name of selectedServices) {
+    serviceExposures[name] = { type: 'ClusterIP' };
+  }
+
   return {
     selectedServices,
     workloadOverrides,
+    serviceExposures,
     ingress: {
       enabled: false,
       mode: 'ingress',

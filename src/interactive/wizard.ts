@@ -1,6 +1,6 @@
 import * as p from '@clack/prompts';
 import type { AnalysisResult } from '../types/analysis.js';
-import type { WizardConfig } from '../types/config.js';
+import type { WizardConfig, ServiceExposure } from '../types/config.js';
 import { selectServices } from './services.js';
 import { configureWorkloads } from './workloads.js';
 import { configureIngress } from './ingress.js';
@@ -74,9 +74,22 @@ export async function runWizard(analysis: AnalysisResult): Promise<WizardConfig 
 
   p.outro('Configuration complete!');
 
+  // Derive serviceExposures from ingress routes
+  const serviceExposures: Record<string, ServiceExposure> = {};
+  const routeServices = new Set(ingress.routes.map((r) => r.serviceName));
+  for (const name of selectedServices) {
+    if (routeServices.has(name)) {
+      const route = ingress.routes.find((r) => r.serviceName === name)!;
+      serviceExposures[name] = { type: 'Ingress', ingressPath: route.path };
+    } else {
+      serviceExposures[name] = { type: 'ClusterIP' };
+    }
+  }
+
   return {
     selectedServices,
     workloadOverrides,
+    serviceExposures,
     ingress,
     envClassification,
     storageConfig,

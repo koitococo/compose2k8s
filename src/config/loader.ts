@@ -20,11 +20,15 @@ export async function loadConfigFile(
   const warnings: string[] = [];
   const defaults = generateDefaults(analysis);
 
+  const ingress = resolveIngress(userConfig, defaults);
+  const serviceExposures = resolveExposures(userConfig, defaults, ingress, analysis, warnings);
+
   const config: WizardConfig = {
     ...defaults,
     selectedServices: resolveServices(userConfig, defaults, analysis, warnings),
     workloadOverrides: resolveWorkloads(userConfig, defaults, analysis, warnings),
-    ingress: resolveIngress(userConfig, defaults),
+    serviceExposures,
+    ingress,
     envClassification: resolveSecrets(userConfig, defaults, analysis, warnings),
     storageConfig: resolveStorage(userConfig, defaults),
     initContainers: userConfig.initContainers,
@@ -100,6 +104,45 @@ function resolveIngress(
       port: r.port,
     })),
   };
+}
+
+function resolveExposures(
+  userConfig: ConfigFile,
+  defaults: WizardConfig,
+  ingress: WizardConfig['ingress'],
+  analysis: AnalysisResult,
+  warnings: string[],
+): WizardConfig['serviceExposures'] {
+  const result = { ...defaults.serviceExposures };
+
+  // If user specified explicit exposures, merge them
+  if (userConfig.exposures) {
+    for (const [svcName, exposure] of Object.entries(userConfig.exposures)) {
+      if (!analysis.services[svcName]) {
+        warnings.push(`Unknown service "${svcName}" in exposures config — skipping.`);
+        continue;
+      }
+      result[svcName] = {
+        type: exposure.type,
+        ...(exposure.ingressPath ? { ingressPath: exposure.ingressPath } : {}),
+        ...(exposure.nodePort != null ? { nodePort: exposure.nodePort } : {}),
+      };
+    }
+    return result;
+  }
+
+  // Backward compat: if ingress.routes exist but no exposures, derive from routes
+  if (ingress.enabled && ingress.routes.length > 0) {
+    const routeServices = new Set(ingress.routes.map((r) => r.serviceName));
+    for (const svcName of Object.keys(result)) {
+      if (routeServices.has(svcName)) {
+        const route = ingress.routes.find((r) => r.serviceName === svcName)!;
+        result[svcName] = { type: 'Ingress', ingressPath: route.path };
+      }
+    }
+  }
+
+  return result;
 }
 
 function resolveSecrets(

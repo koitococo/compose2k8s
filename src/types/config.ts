@@ -44,6 +44,14 @@ export interface ResourceConfig {
   memoryLimit: string;
 }
 
+export type ExposureType = 'ClusterIP' | 'NodePort' | 'LoadBalancer' | 'Ingress';
+
+export interface ServiceExposure {
+  type: ExposureType;
+  ingressPath?: string;  // only for Ingress
+  nodePort?: number;     // only for NodePort (optional)
+}
+
 export interface WorkloadOverride {
   workloadType: 'Deployment' | 'StatefulSet';
   replicas: number;
@@ -53,6 +61,7 @@ export interface WorkloadOverride {
 export interface WizardConfig {
   selectedServices: string[];
   workloadOverrides: Record<string, WorkloadOverride>;
+  serviceExposures: Record<string, ServiceExposure>;
   ingress: IngressConfig;
   envClassification: Record<string, Record<string, 'configmap' | 'secret'>>;
   storageConfig: StorageConfig[];

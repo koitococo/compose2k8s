@@ -32,6 +32,12 @@ const resourcesSchema = z.object({
   memoryLimit: z.string().default('512Mi'),
 });
 
+const exposureSchema = z.object({
+  type: z.enum(['ClusterIP', 'NodePort', 'LoadBalancer', 'Ingress']),
+  ingressPath: z.string().optional(),
+  nodePort: z.number().int().min(30000).max(32767).optional(),
+});
+
 const workloadOverrideSchema = z.object({
   workloadType: z.enum(['Deployment', 'StatefulSet']),
   replicas: z.number().int().min(1).default(1),
@@ -56,6 +62,7 @@ export const configFileSchema = z.object({
   secrets: z.record(z.string(), z.record(z.string(), z.enum(['configmap', 'secret']))).optional(),
   storage: z.array(storageItemSchema).optional(),
   workloads: z.record(z.string(), workloadOverrideSchema).optional(),
+  exposures: z.record(z.string(), exposureSchema).optional(),
   initContainers: z.enum(['wait-for-port', 'none']).default('wait-for-port'),
   resources: z.record(z.string(), resourcesSchema).optional(),
   deploy: deploySchema.default({}),
