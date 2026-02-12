@@ -103,7 +103,7 @@ function buildWaitScript(checkCmd: string, depName: string): string {
 }
 
 function findNativeCheck(image: string): NativeReadinessCheck | null {
-  const imageName = image.split(':')[0].split('/').pop()!.toLowerCase();
+  const imageName = (image.split(':')[0].split('/').pop() ?? '').toLowerCase();
   return NATIVE_READINESS_CHECKS.find((c) => imageName.includes(c.imagePattern)) ?? null;
 }
 

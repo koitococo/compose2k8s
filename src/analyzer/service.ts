@@ -91,7 +91,7 @@ export function inferServiceCategory(
 ): ServiceCategory {
   // 1. Image name match
   if (service.image) {
-    const imageName = service.image.split(':')[0].split('/').pop()!.toLowerCase();
+    const imageName = (service.image.split(':')[0].split('/').pop() ?? '').toLowerCase();
     for (const [pattern, category] of Object.entries(IMAGE_CATEGORY_MAP)) {
       if (imageName.includes(pattern)) return category;
     }
