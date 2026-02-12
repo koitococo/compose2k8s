@@ -33,6 +33,17 @@ export function analyzeDependencies(
     inDegree[node] = edges[node].length;
   }
 
+  // Build reverse-adjacency map: dependency → dependents (for O(V+E) lookup)
+  const reverseEdges: Record<string, string[]> = {};
+  for (const node of allNodes) {
+    reverseEdges[node] = [];
+  }
+  for (const [dependent, deps] of Object.entries(edges)) {
+    for (const dep of deps) {
+      reverseEdges[dep].push(dependent);
+    }
+  }
+
   const queue: string[] = [];
   for (const [node, degree] of Object.entries(inDegree)) {
     if (degree === 0) queue.push(node);
@@ -43,13 +54,11 @@ export function analyzeDependencies(
     const node = queue.shift()!;
     order.push(node);
 
-    // Find nodes that depend on this node and decrement their inDegree
-    for (const [dependent, deps] of Object.entries(edges)) {
-      if (deps.includes(node)) {
-        inDegree[dependent]--;
-        if (inDegree[dependent] === 0) {
-          queue.push(dependent);
-        }
+    // Decrement inDegree of all dependents of this node
+    for (const dependent of reverseEdges[node]) {
+      inDegree[dependent]--;
+      if (inDegree[dependent] === 0) {
+        queue.push(dependent);
       }
     }
   }
