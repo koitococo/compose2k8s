@@ -6,7 +6,7 @@ import { parseComposeFile } from '../parser/compose.js';
 import { analyzeProject } from '../analyzer/index.js';
 import { generateManifests } from '../generator/index.js';
 import { writeOutput } from '../output/index.js';
-import { runWizard } from '../interactive/wizard.js';
+import { runTreeWizard } from '../interactive/tree-wizard.js';
 import { generateDefaults } from '../interactive/defaults.js';
 import { findComposeFile } from '../utils/detect.js';
 import { loadConfigFile } from '../config/loader.js';
@@ -103,7 +103,7 @@ export async function convert(options: ConvertOptions): Promise<void> {
       outputFormat: options.format,
     });
   } else {
-    config = await runWizard(analysis);
+    config = await runTreeWizard(analysis);
     if (!config) return; // User cancelled
   }
 
