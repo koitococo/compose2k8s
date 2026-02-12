@@ -136,7 +136,8 @@ function resolveExposures(
     const routeServices = new Set(ingress.routes.map((r) => r.serviceName));
     for (const svcName of Object.keys(result)) {
       if (routeServices.has(svcName)) {
-        const route = ingress.routes.find((r) => r.serviceName === svcName)!;
+        const route = ingress.routes.find((r) => r.serviceName === svcName);
+        if (!route) continue;
         result[svcName] = { type: 'Ingress', ingressPath: route.path };
       }
     }

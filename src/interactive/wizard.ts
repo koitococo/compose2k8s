@@ -79,7 +79,8 @@ export async function runWizard(analysis: AnalysisResult): Promise<WizardConfig 
   const routeServices = new Set(ingress.routes.map((r) => r.serviceName));
   for (const name of selectedServices) {
     if (routeServices.has(name)) {
-      const route = ingress.routes.find((r) => r.serviceName === name)!;
+      const route = ingress.routes.find((r) => r.serviceName === name);
+      if (!route) continue;
       serviceExposures[name] = { type: 'Ingress', ingressPath: route.path };
     } else {
       serviceExposures[name] = { type: 'ClusterIP' };
