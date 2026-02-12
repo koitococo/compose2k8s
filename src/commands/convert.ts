@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { access, readdir, rm } from 'node:fs/promises';
 import * as p from '@clack/prompts';
 import chalk from 'chalk';
@@ -23,18 +23,32 @@ export interface ConvertOptions {
   namespace?: string;
   autoClean?: AutoCleanMode;
   imagePullSecret?: string;
+  chdir?: string;
 }
 
 export async function convert(options: ConvertOptions): Promise<void> {
-  // Resolve compose file
-  let composeFile = options.file
-    ? resolve(options.file)
-    : findComposeFile(process.cwd());
+  // Resolve working directory and compose file using the 4-case matrix:
+  //   -f | --chdir | compose file           | working dir
+  //   no | no      | auto-detect in ./       | ./
+  //  yes | no      | specified               | dirname(file)
+  //   no | yes     | auto-detect in chdir/   | chdir/
+  //  yes | yes     | specified               | chdir/
+  const workingDir = options.chdir ? resolve(options.chdir) : null;
 
-  if (!composeFile) {
-    p.log.error('No compose file found. Use -f to specify one.');
-    process.exit(1);
+  let composeFile: string;
+  if (options.file) {
+    composeFile = resolve(options.file);
+  } else {
+    const searchDir = workingDir ?? process.cwd();
+    const found = findComposeFile(searchDir);
+    if (!found) {
+      p.log.error(`No compose file found in ${searchDir}. Use -f to specify one.`);
+      process.exit(1);
+    }
+    composeFile = found;
   }
+
+  const resolvedWorkingDir = workingDir ?? dirname(composeFile);
 
   const s = p.spinner();
 
@@ -45,6 +59,7 @@ export async function convert(options: ConvertOptions): Promise<void> {
     parseResult = await parseComposeFile({
       file: composeFile,
       envFile: options.envFile,
+      workingDir: resolvedWorkingDir,
     });
   } catch (err) {
     s.stop('Parse failed');
@@ -108,7 +123,7 @@ export async function convert(options: ConvertOptions): Promise<void> {
   const output = generateManifests({
     analysis,
     config,
-    composeFile,
+    workingDir: resolvedWorkingDir,
   });
   s.stop(`Generated ${output.manifests.length} manifests`);
 

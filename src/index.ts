@@ -29,6 +29,10 @@ program
     '--image-pull-secret <names>',
     'Image pull secret name(s), comma-separated',
   )
+  .option(
+    '--chdir <dir>',
+    'Working directory for resolving relative paths (bind mounts, env_file)',
+  )
   .action(convert);
 
 // Validate command

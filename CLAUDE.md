@@ -102,6 +102,7 @@ tests/               # Mirrors src/ structure
 - **Output directory auto-clean** — `--auto-clean` flag (`force`/`never`/`interactive`) controls behavior when output dir already exists; defaults to `interactive` (prompt) or `never` (for `--non-interactive`)
 - **Image pull secrets** — optional `imagePullSecrets` in DeployOptions, added to PodSpec of both Deployments and StatefulSets for private registry access
 - **Init containers use actual ports** — looks up dependency's first exposed port from analysis, falls back to category defaults (5432 for database, 6379 for cache)
+- **`--chdir` working directory** — overrides the base directory for resolving bind mounts, env_file, and .env auto-detection; `-f` is optional and auto-detects compose file in cwd or `--chdir` directory
 - **Compose entrypoint → K8s command, compose command → K8s args**
 
 ## Test Fixtures
@@ -114,7 +115,8 @@ tests/               # Mirrors src/ structure
 ## CLI Usage
 
 ```sh
-# Convert (default command)
+# Convert (default command) — -f is optional (auto-detects compose file in cwd)
+compose2k8s                                          # auto-detect compose file
 compose2k8s -f docker-compose.yml                    # interactive wizard
 compose2k8s -f docker-compose.yml --non-interactive  # use inferred defaults
 compose2k8s -f docker-compose.yml -o ./manifests --format single-file --namespace myapp
@@ -122,6 +124,10 @@ compose2k8s -f docker-compose.yml -o ./manifests --format single-file --namespac
 # Output directory handling (default: interactive for wizard, never for --non-interactive)
 compose2k8s -f docker-compose.yml --auto-clean=force   # delete existing output dir
 compose2k8s -f docker-compose.yml --auto-clean=never   # error if output dir exists
+
+# Working directory for resolving bind mounts and env_file paths
+compose2k8s --chdir ./project               # auto-detect compose file in ./project
+compose2k8s -f compose.yml --chdir ./project # use compose.yml but resolve paths relative to ./project
 
 # Private registry image pull secrets
 compose2k8s -f docker-compose.yml --image-pull-secret my-registry-secret

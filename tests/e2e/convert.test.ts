@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname } from 'node:path';
 import { readFile, rm, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { parse as parseYaml } from 'yaml';
@@ -13,10 +13,11 @@ const fixturesDir = resolve(import.meta.dirname, '../fixtures');
 
 async function runConversion(fixture: string, outputDir: string) {
   const composeFile = resolve(fixturesDir, fixture);
+  const workingDir = dirname(composeFile);
   const parseResult = await parseComposeFile({ file: composeFile });
   const analysis = analyzeProject(parseResult.project);
   const config = generateDefaults(analysis, { outputDir });
-  const output = generateManifests({ analysis, config, composeFile });
+  const output = generateManifests({ analysis, config, workingDir });
   await writeOutput(output, config);
   return { parseResult, analysis, config, output };
 }
@@ -112,13 +113,14 @@ describe('E2E: convert pipeline', () => {
 
   it('generates valid single-file output', async () => {
     const composeFile = resolve(fixturesDir, 'basic-compose.yml');
+    const workingDir = dirname(composeFile);
     const parseResult = await parseComposeFile({ file: composeFile });
     const analysis = analyzeProject(parseResult.project);
     const config = generateDefaults(analysis, {
       outputDir,
       outputFormat: 'single-file',
     });
-    const output = generateManifests({ analysis, config, composeFile });
+    const output = generateManifests({ analysis, config, workingDir });
     await writeOutput(output, config);
 
     const files = await readdir(outputDir);

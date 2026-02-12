@@ -16,32 +16,7 @@ import type { ComposeProject, ComposeService, ParseResult } from '../types/compo
 export interface ParseOptions {
   file: string;
   envFile?: string;
-}
-
-const COMPOSE_FILE_NAMES = [
-  'compose.yaml',
-  'compose.yml',
-  'docker-compose.yml',
-  'docker-compose.yaml',
-];
-
-/**
- * Auto-detect the compose file in a directory.
- */
-export function findComposeFile(dir: string): string | null {
-  for (const name of COMPOSE_FILE_NAMES) {
-    const fullPath = resolve(dir, name);
-    if (existsSync(fullPath)) return fullPath;
-  }
-  return null;
-}
-
-/**
- * Find .env file next to the compose file.
- */
-export function findEnvFile(composeFilePath: string): string | null {
-  const envPath = resolve(dirname(composeFilePath), '.env');
-  return existsSync(envPath) ? envPath : null;
+  workingDir?: string;
 }
 
 /**
@@ -68,9 +43,11 @@ export async function parseComposeFile(options: ParseOptions): Promise<ParseResu
     );
   }
 
-  // Load env file
+  // Load env file — use workingDir if provided, else dirname of compose file
+  const baseDir = options.workingDir ?? dirname(resolve(options.file));
   let env: Record<string, string> = { ...process.env as Record<string, string> };
-  const envFilePath = options.envFile ?? findEnvFile(options.file);
+  const autoEnvPath = resolve(baseDir, '.env');
+  const envFilePath = options.envFile ?? (existsSync(autoEnvPath) ? autoEnvPath : null);
   if (envFilePath && existsSync(envFilePath)) {
     const envContent = await readFile(envFilePath, 'utf-8');
     const fileEnv = parseEnvFile(envContent);
@@ -110,7 +87,7 @@ export async function parseComposeFile(options: ParseOptions): Promise<ParseResu
     // Handle env_file: load additional env files and merge into environment
     let envFromFiles: Record<string, string> = {};
     if (svc.env_file) {
-      const composeDir = dirname(resolve(options.file));
+      const composeDir = baseDir;
       const envFiles = Array.isArray(svc.env_file) ? svc.env_file : [svc.env_file];
       for (const ef of envFiles) {
         const efPath = typeof ef === 'string' ? ef : (ef as { path: string }).path;

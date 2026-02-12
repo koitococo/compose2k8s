@@ -1,4 +1,3 @@
-import { dirname } from 'node:path';
 import type { AnalysisResult } from '../types/analysis.js';
 import type { WizardConfig } from '../types/config.js';
 import type { GeneratedManifest, GeneratorOutput } from '../types/k8s.js';
@@ -16,15 +15,15 @@ import { generateMigrationScripts } from './migration-script.js';
 export interface GenerateInput {
   analysis: AnalysisResult;
   config: WizardConfig;
-  composeFile: string;
+  workingDir: string;
 }
 
 /**
  * Generate all K8s manifests from analysis + config.
  */
 export function generateManifests(input: GenerateInput): GeneratorOutput {
-  const { analysis, config, composeFile } = input;
-  const composeDir = dirname(composeFile);
+  const { analysis, config, workingDir } = input;
+  const composeDir = workingDir;
   const manifests: GeneratedManifest[] = [];
   const warnings: string[] = [];
 
