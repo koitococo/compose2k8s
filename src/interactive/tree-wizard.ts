@@ -12,6 +12,11 @@ import { selectServices } from './services.js';
 import { generateDefaults } from './defaults.js';
 import { toK8sName } from '../utils/k8s-names.js';
 
+/** Unwrap a @clack/prompts value that has been checked for isCancel. */
+function unwrap<T>(val: T | symbol): T {
+  return val as T;
+}
+
 /**
  * Run the tree-menu wizard. Configure-by-exception: start with smart defaults,
  * only modify what you want.
@@ -304,9 +309,12 @@ async function editExposure(
     const path = await p.text({
       message: `Ingress path for ${serviceName}:`,
       initialValue: config.serviceExposures[serviceName]?.ingressPath ?? defaultPath,
+      validate: (v) => {
+        if (!v.startsWith('/')) return 'Path must start with /';
+      },
     });
     if (p.isCancel(path)) return true;
-    exposure.ingressPath = path as string;
+    exposure.ingressPath = unwrap(path);
 
     // If ingress domain not set, trigger global ingress config
     if (!config.ingress.domain) {
@@ -424,14 +432,14 @@ async function editStorage(
     if (p.isCancel(accessMode)) return true;
 
     if (existing) {
-      existing.storageClass = storageClass as string;
-      existing.size = size as string;
+      existing.storageClass = unwrap(storageClass);
+      existing.size = unwrap(size);
       existing.accessMode = accessMode;
     } else {
       config.storageConfig.push({
         volumeName: volName,
-        storageClass: storageClass as string,
-        size: size as string,
+        storageClass: unwrap(storageClass),
+        size: unwrap(size),
         accessMode,
       });
     }
@@ -474,10 +482,10 @@ async function editResources(
   if (p.isCancel(memoryLimit)) return true;
 
   config.resourceOverrides[serviceName] = {
-    cpuRequest: cpuRequest as string,
-    cpuLimit: cpuLimit as string,
-    memoryRequest: memoryRequest as string,
-    memoryLimit: memoryLimit as string,
+    cpuRequest: unwrap(cpuRequest),
+    cpuLimit: unwrap(cpuLimit),
+    memoryRequest: unwrap(memoryRequest),
+    memoryLimit: unwrap(memoryLimit),
   };
 
   return false;
@@ -553,9 +561,13 @@ async function handleGlobalEdit(action: string, config: WizardConfig): Promise<b
       const val = await p.text({
         message: 'Kubernetes namespace:',
         initialValue: config.deploy.namespace,
+        validate: (v) => {
+          if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(v))
+            return 'Must be a valid K8s namespace (lowercase alphanumeric and hyphens, max 63 chars)';
+        },
       });
       if (p.isCancel(val)) return true;
-      config.deploy.namespace = val as string;
+      config.deploy.namespace = unwrap(val);
       break;
     }
     case 'init-containers': {
@@ -593,9 +605,12 @@ async function handleGlobalEdit(action: string, config: WizardConfig): Promise<b
       const val = await p.text({
         message: 'Output directory:',
         initialValue: config.deploy.outputDir,
+        validate: (v) => {
+          if (!v.trim()) return 'Output directory is required';
+        },
       });
       if (p.isCancel(val)) return true;
-      config.deploy.outputDir = val as string;
+      config.deploy.outputDir = unwrap(val);
       break;
     }
     case 'pull-secrets': {
@@ -615,7 +630,7 @@ async function handleGlobalEdit(action: string, config: WizardConfig): Promise<b
           },
         });
         if (p.isCancel(val)) return true;
-        config.deploy.imagePullSecrets = (val as string)
+        config.deploy.imagePullSecrets = unwrap(val)
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean);
@@ -646,7 +661,11 @@ async function editIngressGlobal(config: WizardConfig): Promise<boolean> {
     message: 'Domain name:',
     placeholder: 'app.example.com',
     initialValue: config.ingress.domain ?? '',
-    validate: (v) => (!v.trim() ? 'Domain is required' : undefined),
+    validate: (v) => {
+      if (!v.trim()) return 'Domain is required';
+      if (!/^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$/.test(v.trim()))
+        return 'Must be a valid domain name';
+    },
   });
   if (p.isCancel(domain)) return true;
 
@@ -689,11 +708,11 @@ async function editIngressGlobal(config: WizardConfig): Promise<boolean> {
       placeholder: 'e.g. istio, cilium, nginx, higress',
     });
     if (p.isCancel(gc)) return true;
-    gatewayClass = gc as string;
+    gatewayClass = unwrap(gc);
   }
 
   config.ingress.mode = mode;
-  config.ingress.domain = domain as string;
+  config.ingress.domain = unwrap(domain);
   config.ingress.tls = tls;
   config.ingress.certManager = certManager;
   config.ingress.controller = controller;
