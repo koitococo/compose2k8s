@@ -79,4 +79,43 @@ describe('generateService', () => {
 
     expect(selector['app.kubernetes.io/name']).toBe('api');
   });
+
+  it('generates NodePort service when exposure is NodePort', () => {
+    const config = makeConfig();
+    config.serviceExposures = { api: { type: 'NodePort' } };
+    const result = generateService('api', makeAnalyzed(), config);
+
+    const spec = result!.manifest.spec as Record<string, unknown>;
+    expect(spec.type).toBe('NodePort');
+  });
+
+  it('generates LoadBalancer service when exposure is LoadBalancer', () => {
+    const config = makeConfig();
+    config.serviceExposures = { api: { type: 'LoadBalancer' } };
+    const result = generateService('api', makeAnalyzed(), config);
+
+    const spec = result!.manifest.spec as Record<string, unknown>;
+    expect(spec.type).toBe('LoadBalancer');
+  });
+
+  it('keeps ClusterIP for Ingress exposure', () => {
+    const config = makeConfig();
+    config.serviceExposures = { api: { type: 'Ingress', ingressPath: '/' } };
+    const result = generateService('api', makeAnalyzed(), config);
+
+    const spec = result!.manifest.spec as Record<string, unknown>;
+    expect(spec.type).toBeUndefined();
+  });
+
+  it('sets nodePort on port when specified', () => {
+    const config = makeConfig();
+    config.serviceExposures = { api: { type: 'NodePort', nodePort: 30080 } };
+    const result = generateService('api', makeAnalyzed(), config);
+
+    const spec = result!.manifest.spec as Record<string, unknown>;
+    expect(spec.type).toBe('NodePort');
+
+    const ports = spec.ports as Array<Record<string, unknown>>;
+    expect(ports[0].nodePort).toBe(30080);
+  });
 });

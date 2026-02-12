@@ -18,14 +18,26 @@ export function generateService(
   const labels = standardLabels(serviceName);
   const selector = selectorLabels(serviceName);
 
+  const exposure = config.serviceExposures?.[serviceName];
+  const exposureType = exposure?.type ?? 'ClusterIP';
+
   const ports = analyzed.ports.map((p) => {
     const proto = p.protocol.toUpperCase();
     return {
       port: p.containerPort,
       ...(proto !== 'TCP' ? { protocol: proto } : {}),
       name: `${p.protocol}-${p.containerPort}`,
+      ...(exposureType === 'NodePort' && exposure?.nodePort != null
+        ? { nodePort: exposure.nodePort }
+        : {}),
     };
   });
+
+  // Determine spec.type: omit for ClusterIP/Ingress (K8s default), set for NodePort/LoadBalancer
+  const serviceType =
+    exposureType === 'NodePort' || exposureType === 'LoadBalancer'
+      ? exposureType
+      : undefined;
 
   const manifest: K8sManifest = {
     apiVersion: 'v1',
@@ -36,6 +48,7 @@ export function generateService(
       labels,
     },
     spec: {
+      ...(serviceType ? { type: serviceType } : {}),
       selector,
       ports,
     },
