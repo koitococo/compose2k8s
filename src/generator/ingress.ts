@@ -42,7 +42,7 @@ export function generateIngress(
     apiVersion: 'networking.k8s.io/v1',
     kind: 'Ingress',
     metadata: {
-      name: 'app-ingress',
+      name: `${toK8sName(config.deploy.namespace || 'app')}-ingress`,
       namespace: config.deploy.namespace || undefined,
       labels: {
         'app.kubernetes.io/managed-by': 'compose2k8s',
@@ -56,7 +56,7 @@ export function generateIngress(
             tls: [
               {
                 hosts: [config.ingress.domain ?? 'app.example.com'],
-                secretName: 'app-tls-secret',
+                secretName: `${toK8sName(config.deploy.namespace || 'app')}-tls-secret`,
               },
             ],
           }

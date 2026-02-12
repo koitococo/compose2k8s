@@ -28,7 +28,7 @@ export function generateGatewayAPI(
       hostname: domain,
       tls: {
         mode: 'Terminate',
-        certificateRefs: [{ kind: 'Secret', name: 'app-tls-secret' }],
+        certificateRefs: [{ kind: 'Secret', name: `${toK8sName(namespace ?? 'app')}-tls-secret` }],
       },
       allowedRoutes: { namespaces: { from: 'Same' } },
     });
@@ -59,7 +59,7 @@ export function generateGatewayAPI(
     apiVersion: 'gateway.networking.k8s.io/v1',
     kind: 'Gateway',
     metadata: {
-      name: 'app-gateway',
+      name: `${toK8sName(namespace ?? 'app')}-gateway`,
       namespace,
       labels: {
         'app.kubernetes.io/managed-by': 'compose2k8s',
@@ -101,14 +101,14 @@ export function generateGatewayAPI(
     apiVersion: 'gateway.networking.k8s.io/v1',
     kind: 'HTTPRoute',
     metadata: {
-      name: 'app-httproute',
+      name: `${toK8sName(namespace ?? 'app')}-httproute`,
       namespace,
       labels: {
         'app.kubernetes.io/managed-by': 'compose2k8s',
       },
     },
     spec: {
-      parentRefs: [{ name: 'app-gateway' }],
+      parentRefs: [{ name: `${toK8sName(namespace ?? 'app')}-gateway` }],
       hostnames: [domain],
       rules,
     },
