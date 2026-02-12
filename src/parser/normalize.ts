@@ -65,7 +65,13 @@ function parsePortString(port: string): ComposePort {
   // Handle IP binding like "0.0.0.0:8080:80"
   const segments = portStr.split(':');
   if (segments.length === 3) {
-    // ip:published:target
+    // ip:published:target — validate that first segment looks like an IP
+    const ip = segments[0];
+    if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip) && !ip.startsWith('[')) {
+      throw new Error(
+        `Invalid port mapping: "${port}" — 3-segment format requires IP:published:target`,
+      );
+    }
     return {
       target: validatePort(parseInt(segments[2], 10), segments[2]),
       published: validatePort(parseInt(segments[1], 10), segments[1]),
