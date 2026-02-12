@@ -8,7 +8,7 @@ function makeConfig(overrides: Partial<WizardConfig> = {}): WizardConfig {
     selectedServices: ['api', 'postgres', 'redis'],
     workloadOverrides: {},
     serviceExposures: {},
-    ingress: { enabled: false, tls: false, certManager: false, controller: 'none', routes: [] },
+    ingress: { enabled: false, mode: 'ingress', tls: false, certManager: false, controller: 'none', routes: [] },
     envClassification: {},
     storageConfig: [],
     initContainers: 'wait-for-port',
