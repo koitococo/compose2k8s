@@ -110,14 +110,12 @@ export function generateStatefulSet(
     },
   ];
 
-  if (analyzed.ports.length > 0) {
-    results.push({
-      filename: `${k8sName}-headless-service.yaml`,
-      manifest: headlessService,
-      serviceName,
-      description: `Headless Service for ${serviceName} StatefulSet`,
-    });
-  }
+  results.push({
+    filename: `${k8sName}-headless-service.yaml`,
+    manifest: headlessService,
+    serviceName,
+    description: `Headless Service for ${serviceName} StatefulSet`,
+  });
 
   return results;
 }
