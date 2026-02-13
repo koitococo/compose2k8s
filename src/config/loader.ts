@@ -32,6 +32,7 @@ export async function loadConfigFile(
     envClassification: resolveSecrets(userConfig, defaults, analysis, warnings),
     storageConfig: resolveStorage(userConfig, defaults),
     initContainers: userConfig.initContainers,
+    podSecurityStandard: userConfig.podSecurityStandard,
     resourceOverrides: userConfig.resources ?? {},
     deploy: resolveDeploy(userConfig, defaults),
   };

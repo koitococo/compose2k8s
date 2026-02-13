@@ -64,6 +64,7 @@ export const configFileSchema = z.object({
   workloads: z.record(z.string(), workloadOverrideSchema).optional(),
   exposures: z.record(z.string(), exposureSchema).optional(),
   initContainers: z.enum(['wait-for-port', 'none']).default('wait-for-port'),
+  podSecurityStandard: z.enum(['restricted', 'baseline', 'none']).default('restricted'),
   resources: z.record(z.string(), resourcesSchema).optional(),
   deploy: deploySchema.default({}),
 });

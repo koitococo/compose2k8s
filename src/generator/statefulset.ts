@@ -67,6 +67,9 @@ export function generateStatefulSet(
           ...(config.deploy.imagePullSecrets?.length
             ? { imagePullSecrets: config.deploy.imagePullSecrets.map((name) => ({ name })) }
             : {}),
+          ...(container.podSecurityContext
+            ? { securityContext: container.podSecurityContext }
+            : {}),
           ...(container.initContainers?.length
             ? { initContainers: container.initContainers }
             : {}),

@@ -7,6 +7,7 @@ import type {
   ExposureType,
   ResourceConfig,
   StorageConfig,
+  PodSecurityStandard,
 } from '../types/config.js';
 import { selectServices } from './services.js';
 import { generateDefaults } from './defaults.js';
@@ -81,7 +82,7 @@ async function mainMenu(
     };
   });
 
-  const globalHint = `ns: ${config.deploy.namespace}, format: ${config.deploy.outputFormat}`;
+  const globalHint = `ns: ${config.deploy.namespace}, pss: ${config.podSecurityStandard}, format: ${config.deploy.outputFormat}`;
 
   return p.select({
     message: 'Configure services or generate manifests:',
@@ -514,6 +515,12 @@ async function globalSettingsMenu(
       });
     }
 
+    options.push({
+      value: 'pod-security',
+      label: 'Pod security standard',
+      hint: config.podSecurityStandard,
+    });
+
     // Show ingress settings if any service uses Ingress exposure
     const hasIngress = Object.values(config.serviceExposures).some(
       (e) => e.type === 'Ingress',
@@ -581,6 +588,20 @@ async function handleGlobalEdit(action: string, config: WizardConfig): Promise<b
       });
       if (p.isCancel(val)) return true;
       config.initContainers = val;
+      break;
+    }
+    case 'pod-security': {
+      const val = await p.select({
+        message: 'Pod security standard:',
+        options: [
+          { value: 'restricted' as const, label: 'Restricted', hint: 'PSS restricted (recommended for production)' },
+          { value: 'baseline' as const, label: 'Baseline', hint: 'Hardened but less strict' },
+          { value: 'none' as const, label: 'None', hint: 'No security context added (dev clusters)' },
+        ],
+        initialValue: config.podSecurityStandard,
+      });
+      if (p.isCancel(val)) return true;
+      config.podSecurityStandard = val as PodSecurityStandard;
       break;
     }
     case 'ingress': {

@@ -12,6 +12,7 @@ function makeConfig(overrides: Partial<WizardConfig> = {}): WizardConfig {
     envClassification: {},
     storageConfig: [],
     initContainers: 'none',
+    podSecurityStandard: 'none',
     deploy: {
       namespace: 'default',
       imagePullPolicy: 'IfNotPresent',
@@ -185,5 +186,47 @@ describe('generateDeployment', () => {
     const spec = result.manifest.spec as Record<string, unknown>;
 
     expect(spec.replicas).toBe(7);
+  });
+
+  it('omits securityContext when podSecurityStandard is none', () => {
+    const result = generateDeployment('api', makeAnalyzed(), makeConfig({ podSecurityStandard: 'none' }));
+    const spec = result.manifest.spec as Record<string, unknown>;
+    const template = spec.template as Record<string, unknown>;
+    const podSpec = template.spec as Record<string, unknown>;
+    const containers = podSpec.containers as Record<string, unknown>[];
+
+    expect(podSpec.securityContext).toBeUndefined();
+    expect(containers[0].securityContext).toBeUndefined();
+  });
+
+  it('adds restricted securityContext at pod and container level', () => {
+    const result = generateDeployment('api', makeAnalyzed(), makeConfig({ podSecurityStandard: 'restricted' }));
+    const spec = result.manifest.spec as Record<string, unknown>;
+    const template = spec.template as Record<string, unknown>;
+    const podSpec = template.spec as Record<string, unknown>;
+    const containers = podSpec.containers as Record<string, unknown>[];
+
+    expect(podSpec.securityContext).toEqual({
+      runAsNonRoot: true,
+      seccompProfile: { type: 'RuntimeDefault' },
+    });
+    expect(containers[0].securityContext).toEqual({
+      allowPrivilegeEscalation: false,
+      capabilities: { drop: ['ALL'] },
+    });
+  });
+
+  it('adds baseline securityContext at container level only', () => {
+    const result = generateDeployment('api', makeAnalyzed(), makeConfig({ podSecurityStandard: 'baseline' }));
+    const spec = result.manifest.spec as Record<string, unknown>;
+    const template = spec.template as Record<string, unknown>;
+    const podSpec = template.spec as Record<string, unknown>;
+    const containers = podSpec.containers as Record<string, unknown>[];
+
+    expect(podSpec.securityContext).toBeUndefined();
+    expect(containers[0].securityContext).toEqual({
+      allowPrivilegeEscalation: false,
+      capabilities: { drop: ['ALL'] },
+    });
   });
 });

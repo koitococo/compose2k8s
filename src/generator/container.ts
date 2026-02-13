@@ -3,10 +3,12 @@ import type { WizardConfig } from '../types/config.js';
 import { toK8sName } from '../utils/k8s-names.js';
 import { healthcheckToProbes } from './probes.js';
 import { generateInitContainers } from './init-container.js';
+import { buildPodSecurityContext, buildContainerSecurityContext } from './security-context.js';
 
 interface ContainerSpec {
   main: Record<string, unknown>;
   initContainers?: Record<string, unknown>[];
+  podSecurityContext?: Record<string, unknown>;
 }
 
 interface ContainerResult {
@@ -116,6 +118,10 @@ export function buildContainerSpec(
     ? healthcheckToProbes(service.healthcheck, analyzed.ports)
     : {};
 
+  // Security contexts
+  const containerSecurityContext = buildContainerSecurityContext(config.podSecurityStandard);
+  const podSecurityContext = buildPodSecurityContext(config.podSecurityStandard);
+
   // Build main container
   const main: Record<string, unknown> = {
     name: k8sName,
@@ -129,6 +135,7 @@ export function buildContainerSpec(
     ...(args ? { args } : {}),
     ...(Object.keys(resources).length ? { resources } : {}),
     ...probes,
+    ...(containerSecurityContext ? { securityContext: containerSecurityContext } : {}),
   };
 
   // Init containers
@@ -140,6 +147,7 @@ export function buildContainerSpec(
     container: {
       main,
       initContainers: initContainers.length > 0 ? initContainers : undefined,
+      podSecurityContext,
     },
     volumes,
   };

@@ -44,6 +44,8 @@ export interface ResourceConfig {
   memoryLimit: string;
 }
 
+export type PodSecurityStandard = 'restricted' | 'baseline' | 'none';
+
 export type ExposureType = 'ClusterIP' | 'NodePort' | 'LoadBalancer' | 'Ingress';
 
 export interface ServiceExposure {
@@ -66,6 +68,7 @@ export interface WizardConfig {
   envClassification: Record<string, Record<string, 'configmap' | 'secret'>>;
   storageConfig: StorageConfig[];
   initContainers: 'wait-for-port' | 'none';
+  podSecurityStandard: PodSecurityStandard;
   resourceOverrides: Record<string, ResourceConfig>;
   deploy: DeployOptions;
 }

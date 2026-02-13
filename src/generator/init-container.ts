@@ -1,6 +1,7 @@
 import type { AnalyzedService } from '../types/analysis.js';
 import type { WizardConfig } from '../types/config.js';
 import { toK8sName } from '../utils/k8s-names.js';
+import { buildContainerSecurityContext } from './security-context.js';
 
 /**
  * Default ports for common service categories.
@@ -63,6 +64,7 @@ export function generateInitContainers(
   if (config.initContainers !== 'wait-for-port') return [];
 
   const initContainers: Record<string, unknown>[] = [];
+  const securityContext = buildContainerSecurityContext(config.podSecurityStandard);
 
   for (const dep of analyzed.dependsOn) {
     if (!config.selectedServices.includes(dep)) continue;
@@ -81,6 +83,7 @@ export function generateInitContainers(
           '-c',
           buildWaitScript(nativeCheck.command(depName, depPort), dep),
         ],
+        ...(securityContext ? { securityContext } : {}),
       });
     } else {
       initContainers.push({
@@ -91,6 +94,7 @@ export function generateInitContainers(
           '-c',
           buildWaitScript(`nc -z ${depName} ${depPort}`, dep),
         ],
+        ...(securityContext ? { securityContext } : {}),
       });
     }
   }

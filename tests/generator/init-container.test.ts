@@ -12,6 +12,7 @@ function makeConfig(overrides: Partial<WizardConfig> = {}): WizardConfig {
     envClassification: {},
     storageConfig: [],
     initContainers: 'wait-for-port',
+    podSecurityStandard: 'none',
     resourceOverrides: {},
     deploy: {
       namespace: 'default',

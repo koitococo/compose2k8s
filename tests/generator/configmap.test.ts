@@ -12,6 +12,8 @@ function makeConfig(): WizardConfig {
     envClassification: {},
     storageConfig: [],
     initContainers: 'none',
+    podSecurityStandard: 'none',
+    resourceOverrides: {},
     deploy: {
       namespace: 'default',
       imagePullPolicy: 'IfNotPresent',

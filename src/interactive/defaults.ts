@@ -72,6 +72,7 @@ export function generateDefaults(
     envClassification,
     storageConfig,
     initContainers: 'wait-for-port',
+    podSecurityStandard: 'restricted',
     resourceOverrides: {},
     deploy: {
       namespace: overrides.namespace ?? 'default',
