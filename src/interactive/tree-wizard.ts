@@ -22,7 +22,10 @@ function unwrap<T>(val: T | symbol): T {
  * Run the tree-menu wizard. Configure-by-exception: start with smart defaults,
  * only modify what you want.
  */
-export async function runTreeWizard(analysis: AnalysisResult): Promise<WizardConfig | null> {
+export async function runTreeWizard(
+  analysis: AnalysisResult,
+  preset?: WizardConfig,
+): Promise<WizardConfig | null> {
   p.intro('compose2k8s — Docker Compose → Kubernetes');
 
   // Step 1: Select services (reuse existing multiselect)
@@ -32,8 +35,8 @@ export async function runTreeWizard(analysis: AnalysisResult): Promise<WizardCon
     return null;
   }
 
-  // Initialize config with smart defaults
-  const config = generateDefaults(analysis);
+  // Initialize config with preset or smart defaults
+  const config = preset ? { ...preset } : generateDefaults(analysis);
   config.selectedServices = selectedServices;
 
   // Main loop
