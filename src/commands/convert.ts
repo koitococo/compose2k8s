@@ -10,6 +10,7 @@ import { runTreeWizard } from '../interactive/tree-wizard.js';
 import { generateDefaults } from '../interactive/defaults.js';
 import { findComposeFile } from '../utils/detect.js';
 import { loadConfigFile } from '../config/loader.js';
+import { saveConfigFile } from '../config/saver.js';
 
 export type AutoCleanMode = 'force' | 'never' | 'interactive';
 
@@ -24,6 +25,7 @@ export interface ConvertOptions {
   autoClean?: AutoCleanMode;
   imagePullSecret?: string;
   chdir?: string;
+  saveConfig?: string;
 }
 
 export async function convert(options: ConvertOptions): Promise<void> {
@@ -86,8 +88,13 @@ export async function convert(options: ConvertOptions): Promise<void> {
   }
 
   // Phase 3: Config file, defaults, or interactive
+  // Matrix:
+  //   --config + --non-interactive → load config, skip wizard
+  //   --config (no --non-interactive) → load config as preset, run wizard
+  //   --non-interactive (no --config) → generate defaults
+  //   neither → run wizard from scratch
   let config;
-  if (options.config) {
+  if (options.config && options.nonInteractive) {
     const { config: loaded, warnings: configWarnings } = await loadConfigFile(
       resolve(options.config),
       analysis,
@@ -96,6 +103,16 @@ export async function convert(options: ConvertOptions): Promise<void> {
     for (const w of configWarnings) {
       p.log.warn(w);
     }
+  } else if (options.config) {
+    const { config: preset, warnings: configWarnings } = await loadConfigFile(
+      resolve(options.config),
+      analysis,
+    );
+    for (const w of configWarnings) {
+      p.log.warn(w);
+    }
+    config = await runTreeWizard(analysis, preset);
+    if (!config) return; // User cancelled
   } else if (options.nonInteractive) {
     config = generateDefaults(analysis, {
       outputDir: options.output,
@@ -162,6 +179,14 @@ export async function convert(options: ConvertOptions): Promise<void> {
 
   console.log('');
   console.log(`Apply with: ${chalk.bold(`kubectl apply -f ${config.deploy.outputDir}/`)}`);
+
+  // Save config if requested
+  if (options.saveConfig) {
+    const configPath = resolve(options.saveConfig);
+    await saveConfigFile(config, configPath);
+    console.log('');
+    console.log(`Config saved to ${chalk.cyan(configPath)}`);
+  }
 }
 
 /**

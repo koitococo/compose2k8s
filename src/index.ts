@@ -33,6 +33,10 @@ program
     '--chdir <dir>',
     'Working directory for resolving relative paths (bind mounts, env_file)',
   )
+  .option(
+    '--save-config <path>',
+    'Save finalized wizard config as YAML file',
+  )
   .action(convert);
 
 // Validate command
